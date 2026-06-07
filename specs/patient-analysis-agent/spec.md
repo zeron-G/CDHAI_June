@@ -42,6 +42,9 @@ configurable number of cycles.
 
 - WellDoc loader: map `Ptt`, `CGM5Min`, `Diet5Min`, `Exercise5Min`, and
   `Med5Min` records into the project `PatientDataset` shape.
+- Haipipe toolkit dependency: keep `external/haipipe-toolkit` as the formal
+  submodule and install `haipipe` from that source when real WellDoc/haipipe
+  loaders are enabled.
 - Tools/search: add an external discovery adapter that returns citations or
   known domain facts into the personal knowledge base.
 - Application: expose `manifest.json` and reports to message, UI checklist, and

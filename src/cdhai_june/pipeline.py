@@ -10,6 +10,7 @@ from cdhai_june.analysis.hypotheses import HypothesisPlanner, HypothesisTester, 
 from cdhai_june.config import AppConfig
 from cdhai_june.data_loader import load_patient_dataset
 from cdhai_june.external.database import database_runtime_hint
+from cdhai_june.external.haipipe_toolkit import haipipe_toolkit_status
 from cdhai_june.knowledge_base import PersonalKnowledgeBase
 from cdhai_june.llm import build_llm_client
 from cdhai_june.models import RunPaths
@@ -63,6 +64,7 @@ class PatientAnalysisPipeline:
             "baseline_report": str(baseline_path),
             "cycle_reports": [],
             "external": {
+                "haipipe_toolkit": haipipe_toolkit_status(self.config.external).to_json(),
                 "welldoc_space_path": str(self.config.external.welldoc_space_path),
                 "tools_path": str(self.config.external.tools_path),
                 "codex_oauth_package_path": str(self.config.external.codex_oauth_package_path),

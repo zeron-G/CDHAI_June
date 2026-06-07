@@ -8,3 +8,4 @@
 - [x] Implement iterative hypothesis/test/report loop.
 - [x] Add sample data and tests.
 - [x] Run smoke validation.
+- [x] Add haipipe toolkit as formal submodule/dependency metadata.

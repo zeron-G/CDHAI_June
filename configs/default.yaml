@@ -24,8 +24,10 @@ llm:
   openai_api_key: ${CDHAI_OPENAI_API_KEY:}
 
 external:
-  welldoc_space_path: ${CDHAI_WELLDOC_SPACE_PATH:../WellDoc-SPACE}
-  tools_path: ${CDHAI_TOOLS_PATH:../WellDoc-SPACE/Tools}
+  haipipe_toolkit_path: ${CDHAI_HAIPIPE_TOOLKIT_PATH:external/haipipe-toolkit}
+  haipipe_toolkit_url: ${CDHAI_HAIPIPE_TOOLKIT_URL:https://github.com/JHU-CDHAI/WellDoc-SPACE.git}
+  welldoc_space_path: ${CDHAI_WELLDOC_SPACE_PATH:external/haipipe-toolkit}
+  tools_path: ${CDHAI_TOOLS_PATH:external/haipipe-toolkit/Tools}
   codex_oauth_package_path: ${CDHAI_CODEX_OAUTH_PACKAGE_PATH:../HAI-Agent/packages/codex-oauth}
 
 database:

@@ -13,9 +13,11 @@ probe.
   variables, SSH agent, or interactive password entry outside this repository.
 - Keep LLM-generated work behind typed schemas and allowlisted statistical
   tools. Do not execute arbitrary model-written code by default.
-- Preserve compatibility with local `WellDoc-SPACE`, `Tools`, and
-  `HAI-Agent/packages/codex-oauth` paths through configuration rather than
-  hard-coded imports.
+- Treat `external/haipipe-toolkit` as the formal haipipe toolkit submodule.
+  Keep direct toolkit use behind adapter boundaries so the default dry-run path
+  can still work before the heavier toolkit dependency is installed.
+- Preserve compatibility with local `Tools` and `HAI-Agent/packages/codex-oauth`
+  paths through configuration rather than hard-coded imports.
 
 ## Validation
 

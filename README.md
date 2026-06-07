@@ -26,11 +26,48 @@ The project follows the flow in the sketch:
 ## Local Setup
 
 ```bash
-cd D:/data/code/github/CDHAI/CDHAI_June
+git clone --recurse-submodules https://github.com/zeron-G/CDHAI_June.git
+cd CDHAI_June
 python -m venv .venv
 .venv/Scripts/Activate.ps1
 python -m pip install -e ".[dev]"
 ```
+
+If you cloned without submodules:
+
+```bash
+git submodule update --init --recursive external/haipipe-toolkit
+```
+
+## Haipipe Toolkit Dependency
+
+This project now treats `external/haipipe-toolkit` as the formal haipipe
+toolkit submodule. The submodule points to the current source of the `haipipe`
+package:
+
+```text
+external/haipipe-toolkit -> https://github.com/JHU-CDHAI/WellDoc-SPACE.git
+```
+
+That upstream repository is private, so recursive clone and toolkit install
+require GitHub access to `JHU-CDHAI/WellDoc-SPACE`.
+
+Install the toolkit from the submodule when running real WellDoc/haipipe
+loaders:
+
+```bash
+python -m pip install -e external/haipipe-toolkit
+```
+
+Or use the helper:
+
+```powershell
+scripts/setup_haipipe_toolkit.ps1
+```
+
+The default sample-data path still runs without installing the heavy haipipe
+dependency. Each run manifest records whether the submodule is present and
+whether `haipipe` is importable.
 
 Smoke test:
 
@@ -71,17 +108,16 @@ Use the JHU VPN before connecting to the configured SSH host. If a tunnel is
 needed, create it outside the pipeline, then point future database loaders at
 the local tunnel port.
 
-## Adjacent Repositories
+## External Repositories
 
-The default config references local sibling projects:
+The default config references:
 
-- `../WellDoc-SPACE`
-- `../WellDoc-SPACE/Tools`
-- `../HAI-Agent/packages/codex-oauth`
+- `external/haipipe-toolkit`: formal haipipe toolkit submodule
+- `external/haipipe-toolkit/Tools`: Tools path inside the toolkit source tree
+- `../HAI-Agent/packages/codex-oauth`: local Codex OAuth package path
 
-The current MVP keeps these as optional paths. The next integration step is to
-add concrete loaders for WellDoc per-patient stores and wrappers for useful
-Tools search/discovery utilities.
+The next integration step is to add concrete loaders for WellDoc/haipipe
+per-patient stores and wrappers for useful Tools search/discovery utilities.
 
 ## Output Layout
 

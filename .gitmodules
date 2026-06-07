@@ -1,0 +1,3 @@
+[submodule "external/haipipe-toolkit"]
+	path = external/haipipe-toolkit
+	url = https://github.com/JHU-CDHAI/WellDoc-SPACE.git

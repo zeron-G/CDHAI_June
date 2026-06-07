@@ -87,8 +87,10 @@ class LLMConfig:
 
 @dataclass(slots=True)
 class ExternalConfig:
-    welldoc_space_path: Path = Path("../WellDoc-SPACE")
-    tools_path: Path = Path("../WellDoc-SPACE/Tools")
+    haipipe_toolkit_path: Path = Path("external/haipipe-toolkit")
+    haipipe_toolkit_url: str = "https://github.com/JHU-CDHAI/WellDoc-SPACE.git"
+    welldoc_space_path: Path = Path("external/haipipe-toolkit")
+    tools_path: Path = Path("external/haipipe-toolkit/Tools")
     codex_oauth_package_path: Path = Path("../HAI-Agent/packages/codex-oauth")
 
 
@@ -158,8 +160,12 @@ def _build_llm_config(raw: dict[str, Any]) -> LLMConfig:
 
 def _build_external_config(raw: dict[str, Any]) -> ExternalConfig:
     return ExternalConfig(
-        welldoc_space_path=Path(str(raw.get("welldoc_space_path", "../WellDoc-SPACE"))),
-        tools_path=Path(str(raw.get("tools_path", "../WellDoc-SPACE/Tools"))),
+        haipipe_toolkit_path=Path(str(raw.get("haipipe_toolkit_path", "external/haipipe-toolkit"))),
+        haipipe_toolkit_url=str(
+            raw.get("haipipe_toolkit_url", "https://github.com/JHU-CDHAI/WellDoc-SPACE.git")
+        ),
+        welldoc_space_path=Path(str(raw.get("welldoc_space_path", "external/haipipe-toolkit"))),
+        tools_path=Path(str(raw.get("tools_path", "external/haipipe-toolkit/Tools"))),
         codex_oauth_package_path=Path(str(raw.get("codex_oauth_package_path", "../HAI-Agent/packages/codex-oauth"))),
     )
 
@@ -187,4 +193,3 @@ def load_config(path: str | Path | None = None) -> AppConfig:
         external=_build_external_config(raw.get("external", {}) or {}),
         database=_build_database_config(raw.get("database", {}) or {}),
     )
-

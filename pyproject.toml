@@ -7,7 +7,7 @@ name = "cdhai-june"
 version = "0.1.0"
 description = "Single-patient data analysis agent with deterministic probes and iterative LLM reporting."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "httpx>=0.27",
   "matplotlib>=3.8",
@@ -21,6 +21,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
+]
+haipipe-toolkit = [
+  "haipipe @ git+https://github.com/JHU-CDHAI/WellDoc-SPACE.git",
 ]
 
 [project.scripts]
