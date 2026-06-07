@@ -14,3 +14,7 @@ Expected:
 - A run directory is created under `runs/demo/`.
 - Reports exist under the run's `reports/` directory.
 - The persistent knowledge base contains JSONL report and insight entries.
+- `analysis/research_protocol.json`, `analysis/reference_manifest.json`,
+  `analysis/figure_index.json`, and `analysis/ml_prediction_metrics.json` exist.
+- Each `cycles/cycle_XX/` directory contains `research_cycle_review.json`.
+- Reports include deterministic figure links and a reference manifest section.

@@ -94,6 +94,8 @@ class ExternalConfig:
     tools_url: str = "https://github.com/jluo41/Tools.git"
     codex_oauth_package_path: Path = Path("external/codex-oauth")
     codex_oauth_url: str = "https://github.com/zeron-G/codex_oauth.git"
+    academic_research_skills_path: Path = Path("external/academic-research-skills")
+    academic_research_skills_url: str = "https://github.com/Imbad0202/academic-research-skills.git"
 
 
 @dataclass(slots=True)
@@ -171,6 +173,12 @@ def _build_external_config(raw: dict[str, Any]) -> ExternalConfig:
         tools_url=str(raw.get("tools_url", "https://github.com/jluo41/Tools.git")),
         codex_oauth_package_path=Path(str(raw.get("codex_oauth_package_path", "external/codex-oauth"))),
         codex_oauth_url=str(raw.get("codex_oauth_url", "https://github.com/zeron-G/codex_oauth.git")),
+        academic_research_skills_path=Path(
+            str(raw.get("academic_research_skills_path", "external/academic-research-skills"))
+        ),
+        academic_research_skills_url=str(
+            raw.get("academic_research_skills_url", "https://github.com/Imbad0202/academic-research-skills.git")
+        ),
     )
 
 

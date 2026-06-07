@@ -85,5 +85,16 @@ def foundational_dependency_statuses(config: ExternalConfig) -> dict[str, dict[s
             module_name="codex_oauth",
             install_hint="python -m pip install -e external/codex-oauth",
         ),
+        "academic_research_skills": FoundationStatus(
+            name="academic_research_skills",
+            role=(
+                "Paper-grade research loop substrate: literature matrix, preregistration, "
+                "statistical reporting, review, and integrity-gate templates."
+            ),
+            url=config.academic_research_skills_url,
+            path=str(resolve_project_path(config.academic_research_skills_path)),
+            present=resolve_project_path(config.academic_research_skills_path).exists(),
+            install_hint="git submodule update --init --recursive external/academic-research-skills",
+        ),
     }
     return {name: status.to_json() for name, status in statuses.items()}

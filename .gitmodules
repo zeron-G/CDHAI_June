@@ -7,3 +7,6 @@
 [submodule "external/tools"]
 	path = external/tools
 	url = https://github.com/jluo41/Tools.git
+[submodule "external/academic-research-skills"]
+	path = external/academic-research-skills
+	url = https://github.com/Imbad0202/academic-research-skills.git

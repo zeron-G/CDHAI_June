@@ -16,6 +16,7 @@ from cdhai_june.knowledge_base import PersonalKnowledgeBase
 from cdhai_june.llm import build_llm_client
 from cdhai_june.models import RunPaths
 from cdhai_june.reporting import ReportWriter
+from cdhai_june.research import build_cycle_research_review, build_research_context
 from cdhai_june.utils import write_json
 
 
@@ -36,9 +37,17 @@ class PatientAnalysisPipeline:
 
         kb = PersonalKnowledgeBase(paths.kb_dir)
         basic_profile = self.basic_analyzer.run(dataset, paths.analysis_dir)
+        research_context = build_research_context(
+            dataset=dataset,
+            basic_profile=basic_profile,
+            analysis_dir=paths.analysis_dir,
+            external_config=self.config.external,
+            analysis_config=self.config.analysis,
+        )
         baseline_path, baseline_summary = self.report_writer.write_basic_report(
             dataset.patient_id,
             basic_profile,
+            research_context,
             paths.reports_dir,
         )
         kb.add_report(
@@ -63,6 +72,14 @@ class PatientAnalysisPipeline:
                 "kb_dir": str(paths.kb_dir),
             },
             "baseline_report": str(baseline_path),
+            "research_artifacts": {
+                "research_context": str(paths.analysis_dir / "research_context.json"),
+                "research_protocol": str(paths.analysis_dir / "research_protocol.json"),
+                "literature_matrix": str(paths.analysis_dir / "literature_matrix.json"),
+                "reference_manifest": str(paths.analysis_dir / "reference_manifest.json"),
+                "figure_index": str(paths.analysis_dir / "figure_index.json"),
+                "ml_prediction_metrics": str(paths.analysis_dir / "ml_prediction_metrics.json"),
+            },
             "cycle_reports": [],
             "external": {
                 "foundational_dependencies": foundational_dependency_statuses(self.config.external),
@@ -86,6 +103,14 @@ class PatientAnalysisPipeline:
             )
             results = [self.hypothesis_tester.test(dataset, hypothesis, cycle_dir) for hypothesis in hypotheses]
             write_cycle_payload(cycle_dir, hypotheses, results)
+            cycle_research_review = build_cycle_research_review(
+                cycle=cycle,
+                hypotheses=hypotheses,
+                results=results,
+                research_context=research_context,
+                cycle_dir=cycle_dir,
+                analysis_config=self.config.analysis,
+            )
             kb.add_hypotheses(run_id=run_id, cycle=cycle, hypotheses=[hypothesis.to_json() for hypothesis in hypotheses])
 
             report_path, report_summary, insights = self.report_writer.write_cycle_report(
@@ -95,6 +120,8 @@ class PatientAnalysisPipeline:
                 results=results,
                 kb_context=kb_context,
                 cross_report_links=kb.cross_report_links(),
+                research_context=research_context,
+                cycle_research_review=cycle_research_review,
                 reports_dir=paths.reports_dir,
             )
             kb.add_report(
@@ -110,6 +137,7 @@ class PatientAnalysisPipeline:
                     "cycle": cycle,
                     "report_path": str(report_path),
                     "cycle_dir": str(cycle_dir),
+                    "research_cycle_review": str(cycle_dir / "research_cycle_review.json"),
                     "hypotheses": [hypothesis.to_json() for hypothesis in hypotheses],
                     "results": [result.to_json() for result in results],
                 }
@@ -120,6 +148,7 @@ class PatientAnalysisPipeline:
             manifest=manifest,
             kb_context=kb.recent_context(limit=30),
             cross_report_links=kb.cross_report_links(limit=30),
+            research_context=research_context,
             reports_dir=paths.reports_dir,
         )
         kb.add_report(

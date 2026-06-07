@@ -280,10 +280,18 @@ class HypothesisTester:
         if len(groups) < 2:
             return _skipped(hypothesis, "circadian_pattern", "Need at least two populated dayparts.")
         stat, p_value = stats.kruskal(*groups)
+        total_n = int(sum(len(group) for group in groups))
+        group_count = int(len(groups))
+        epsilon_squared = None
+        if total_n > group_count:
+            epsilon_squared = max(0.0, float((stat - group_count + 1) / (total_n - group_count)))
         metrics = {
             "test": "Kruskal-Wallis by daypart",
             "statistic": float(stat),
             "p_value": float(p_value),
+            "total_n": total_n,
+            "group_count": group_count,
+            "epsilon_squared": epsilon_squared,
             "daypart_summary": by_part.to_dict(orient="records"),
         }
         status = _status_from_p(p_value, self.config.hypothesis.alpha)
@@ -309,6 +317,7 @@ class HypothesisTester:
             "slope_mgdl_per_day": float(slope),
             "intercept": float(intercept),
             "r_value": float(r_value),
+            "r_squared": float(r_value**2),
             "p_value": float(p_value),
             "stderr": float(stderr),
             "daily": daily.assign(date=daily[time_col].astype(str)).drop(columns=[time_col]).to_dict(orient="records"),
@@ -421,4 +430,3 @@ def _skipped(hypothesis: Hypothesis, method: str, reason: str) -> TestResult:
 def write_cycle_payload(cycle_dir: Path, hypotheses: list[Hypothesis], results: list[TestResult]) -> None:
     write_json(cycle_dir / "hypotheses.json", [hypothesis.to_json() for hypothesis in hypotheses])
     write_json(cycle_dir / "test_results.json", [result.to_json() for result in results])
-

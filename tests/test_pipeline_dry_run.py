@@ -17,5 +17,7 @@ def test_pipeline_dry_run_creates_reports(tmp_path: Path) -> None:
     assert (run_dir / "manifest.json").exists()
     assert Path(manifest["baseline_report"]).exists()
     assert Path(manifest["final_report"]).exists()
+    assert Path(manifest["research_artifacts"]["research_protocol"]).exists()
+    assert Path(manifest["research_artifacts"]["reference_manifest"]).exists()
     assert len(manifest["cycle_reports"]) == 2
-
+    assert Path(manifest["cycle_reports"][0]["research_cycle_review"]).exists()

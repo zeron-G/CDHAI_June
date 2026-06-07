@@ -31,6 +31,8 @@ external:
   tools_url: ${CDHAI_TOOLS_URL:https://github.com/jluo41/Tools.git}
   codex_oauth_package_path: ${CDHAI_CODEX_OAUTH_PACKAGE_PATH:external/codex-oauth}
   codex_oauth_url: ${CDHAI_CODEX_OAUTH_URL:https://github.com/zeron-G/codex_oauth.git}
+  academic_research_skills_path: ${CDHAI_ACADEMIC_RESEARCH_SKILLS_PATH:external/academic-research-skills}
+  academic_research_skills_url: ${CDHAI_ACADEMIC_RESEARCH_SKILLS_URL:https://github.com/Imbad0202/academic-research-skills.git}
 
 database:
   ssh_host: ${CDHAI_DB_SSH_HOST:10.175.198.65}

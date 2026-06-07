@@ -7,6 +7,7 @@ import pandas as pd
 
 from cdhai_june.analysis.cgm import analyze_cgm
 from cdhai_june.analysis.events import analyze_events
+from cdhai_june.analysis.ml import run_ml_prediction_baseline
 from cdhai_june.config import AnalysisConfig
 from cdhai_june.models import Artifact, PatientDataset
 from cdhai_june.utils import write_json
@@ -24,6 +25,7 @@ class BasicAnalyzer:
         }
         cgm = analyze_cgm(dataset, self.config, analysis_dir)
         events = analyze_events(dataset, self.config, analysis_dir)
+        ml_prediction = run_ml_prediction_baseline(dataset, analysis_dir, plot=self.config.plot)
         payload: dict[str, Any] = {
             "patient_id": dataset.patient_id,
             "source_path": str(dataset.source_path),
@@ -32,6 +34,7 @@ class BasicAnalyzer:
             "tables": tables,
             "cgm": cgm,
             "events": events,
+            "ml_prediction": ml_prediction,
         }
         write_json(analysis_dir / "basic_profile.json", payload)
         return payload
@@ -107,4 +110,3 @@ def _missingness(df: pd.DataFrame) -> dict[str, Any]:
 
 def artifact_from_path(path: Path, kind: str, summary: str = "") -> Artifact:
     return Artifact(name=path.stem, path=path, kind=kind, summary=summary)
-

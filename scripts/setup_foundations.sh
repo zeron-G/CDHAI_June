@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-git submodule update --init --recursive external/haipipe-toolkit external/tools external/codex-oauth
+git submodule update --init --recursive external/haipipe-toolkit external/tools external/codex-oauth external/academic-research-skills
 python -m pip install -e external/codex-oauth
 
 cat <<'MSG'

@@ -8,6 +8,12 @@ statistical probes, then repeats the narrative cycle across reports.
 The default loop runs 5 cycles and can be changed with `--cycles` or
 `analysis.max_narrative_cycles` in `configs/default.yaml`.
 
+Each report cycle is intended to be a research loop, not a loose test pass:
+the pipeline now emits a literature-backed research protocol, explicit
+hypotheses, mathematical definitions, statistical/effect-size audit tables,
+a simple ML prediction baseline, figure index, reference manifest, and
+claim-integrity guardrails before asking the LLM to write narrative text.
+
 ## Why This Shape
 
 The project follows the flow in the sketch:
@@ -48,6 +54,7 @@ foundational dependencies under `external/`:
 external/haipipe-toolkit -> https://github.com/JHU-CDHAI/WellDoc-SPACE.git
 external/tools           -> https://github.com/jluo41/Tools.git
 external/codex-oauth     -> https://github.com/zeron-G/codex_oauth.git
+external/academic-research-skills -> https://github.com/Imbad0202/academic-research-skills.git
 ```
 
 Roles:
@@ -59,6 +66,9 @@ Roles:
 - `codex-oauth`: preferred local Codex OAuth LLM transport. When installed, the
   `codex_oauth` provider uses this package first and only falls back to the
   built-in compatibility client when the package is absent.
+- `academic-research-skills`: paper-grade research pipeline substrate. CDHAI_June
+  adapts its literature matrix, preregistration, IMRAD, statistical reporting,
+  review, and integrity-gate patterns into per-cycle patient-data reports.
 
 `JHU-CDHAI/WellDoc-SPACE` is private, so recursive clone and haipipe install
 require GitHub access to that organization repository.
@@ -84,6 +94,36 @@ scripts/setup_haipipe_toolkit.ps1
 The default sample-data path still runs without installing the heavy haipipe or
 Codex OAuth dependencies. Each run manifest records whether all foundational
 submodules are present and whether installable packages are importable.
+
+## Paper-Grade Research Loop
+
+The deterministic analysis phase writes these artifacts before narrative
+generation:
+
+```text
+analysis/
+  basic_profile.json
+  cgm_metrics.json
+  event_metrics.json
+  ml_prediction_metrics.json
+  ml_next_glucose_predictions.csv
+  research_protocol.json
+  literature_matrix.json
+  reference_manifest.json
+  figure_index.json
+  research_integrity_checklist.json
+cycles/cycle_XX/
+  hypotheses.json
+  test_results.json
+  research_cycle_review.json
+```
+
+The protocol encodes research questions, hypotheses, falsification criteria,
+mathematical definitions, a statistical analysis plan, ML-prediction baseline,
+visualization plan, and citation policy. Reports may cite only the verified
+reference manifest unless a future external-discovery adapter verifies new
+sources. Single-patient associations are always framed as exploratory evidence,
+not clinical guidance.
 
 Smoke test:
 
@@ -131,6 +171,8 @@ The default config references:
 - `external/haipipe-toolkit`: formal haipipe toolkit submodule
 - `external/tools`: formal Tools submodule
 - `external/codex-oauth`: formal Codex OAuth submodule
+- `external/academic-research-skills`: formal academic research workflow
+  submodule
 
 The next integration step is to add concrete loaders for WellDoc/haipipe
 per-patient stores and wrappers for useful Tools search/discovery utilities.
@@ -145,6 +187,7 @@ runs/
   <patient_id>/<run_id>/
     analysis/
     cycles/
+      cycle_XX/research_cycle_review.json
     reports/
     manifest.json
 ```

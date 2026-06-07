@@ -8,7 +8,9 @@
    OpenAI-compatible providers.
 5. Implement hypothesis planning and allowlisted statistical test execution.
 6. Persist reports and insights into a patient knowledge base.
-7. Verify with smoke test and unit tests.
+7. Add paper-grade research artifacts: protocol, literature matrix, reference
+   manifest, figure index, ML prediction baseline, and cycle audit.
+8. Verify with smoke test and unit tests.
 
 ## Risks
 
@@ -17,3 +19,5 @@
   fallback and keep provider logic isolated.
 - Clinical interpretation should remain research-supportive, not medical
   advice.
+- Citation metadata and literature claims must remain explicit and re-verifiable
+  before publication.

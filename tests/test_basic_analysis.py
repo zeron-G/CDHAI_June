@@ -14,4 +14,5 @@ def test_basic_analysis_detects_cgm_and_events(tmp_path: Path) -> None:
     assert profile["cgm"]["n_readings"] == 36
     assert profile["events"]["available"] is True
     assert profile["events"]["meal_response"]["available"] is True
-
+    assert profile["ml_prediction"]["available"] is True
+    assert (tmp_path / "ml_prediction_metrics.json").exists()
