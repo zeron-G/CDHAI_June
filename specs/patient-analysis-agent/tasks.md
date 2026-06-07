@@ -9,3 +9,4 @@
 - [x] Add sample data and tests.
 - [x] Run smoke validation.
 - [x] Add haipipe toolkit as formal submodule/dependency metadata.
+- [x] Add Tools and codex_oauth as first-class foundation submodules.

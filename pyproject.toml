@@ -25,6 +25,13 @@ dev = [
 haipipe-toolkit = [
   "haipipe @ git+https://github.com/JHU-CDHAI/WellDoc-SPACE.git",
 ]
+codex-oauth = [
+  "codex-oauth @ git+https://github.com/zeron-G/codex_oauth.git",
+]
+foundations = [
+  "haipipe @ git+https://github.com/JHU-CDHAI/WellDoc-SPACE.git",
+  "codex-oauth @ git+https://github.com/zeron-G/codex_oauth.git",
+]
 
 [project.scripts]
 cdhai-june = "cdhai_june.cli:main"

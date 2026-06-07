@@ -27,8 +27,10 @@ external:
   haipipe_toolkit_path: ${CDHAI_HAIPIPE_TOOLKIT_PATH:external/haipipe-toolkit}
   haipipe_toolkit_url: ${CDHAI_HAIPIPE_TOOLKIT_URL:https://github.com/JHU-CDHAI/WellDoc-SPACE.git}
   welldoc_space_path: ${CDHAI_WELLDOC_SPACE_PATH:external/haipipe-toolkit}
-  tools_path: ${CDHAI_TOOLS_PATH:external/haipipe-toolkit/Tools}
-  codex_oauth_package_path: ${CDHAI_CODEX_OAUTH_PACKAGE_PATH:../HAI-Agent/packages/codex-oauth}
+  tools_path: ${CDHAI_TOOLS_PATH:external/tools}
+  tools_url: ${CDHAI_TOOLS_URL:https://github.com/jluo41/Tools.git}
+  codex_oauth_package_path: ${CDHAI_CODEX_OAUTH_PACKAGE_PATH:external/codex-oauth}
+  codex_oauth_url: ${CDHAI_CODEX_OAUTH_URL:https://github.com/zeron-G/codex_oauth.git}
 
 database:
   ssh_host: ${CDHAI_DB_SSH_HOST:10.175.198.65}

@@ -13,11 +13,13 @@ probe.
   variables, SSH agent, or interactive password entry outside this repository.
 - Keep LLM-generated work behind typed schemas and allowlisted statistical
   tools. Do not execute arbitrary model-written code by default.
-- Treat `external/haipipe-toolkit` as the formal haipipe toolkit submodule.
-  Keep direct toolkit use behind adapter boundaries so the default dry-run path
-  can still work before the heavier toolkit dependency is installed.
-- Preserve compatibility with local `Tools` and `HAI-Agent/packages/codex-oauth`
-  paths through configuration rather than hard-coded imports.
+- Treat `external/haipipe-toolkit`, `external/tools`, and
+  `external/codex-oauth` as the formal foundation layer for this project.
+  Keep direct use behind adapter boundaries so the default dry-run path can
+  still work before heavier or private dependencies are installed.
+- Prefer the `codex_oauth` package from `external/codex-oauth` for the
+  `codex_oauth` LLM provider when it is installed; use the built-in transport
+  compatibility code only as fallback.
 
 ## Validation
 

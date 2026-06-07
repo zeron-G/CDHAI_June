@@ -1,3 +1,9 @@
 [submodule "external/haipipe-toolkit"]
 	path = external/haipipe-toolkit
 	url = https://github.com/JHU-CDHAI/WellDoc-SPACE.git
+[submodule "external/codex-oauth"]
+	path = external/codex-oauth
+	url = https://github.com/zeron-G/codex_oauth.git
+[submodule "external/tools"]
+	path = external/tools
+	url = https://github.com/jluo41/Tools.git

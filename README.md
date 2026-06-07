@@ -36,24 +36,40 @@ python -m pip install -e ".[dev]"
 If you cloned without submodules:
 
 ```bash
-git submodule update --init --recursive external/haipipe-toolkit
+git submodule update --init --recursive
 ```
 
-## Haipipe Toolkit Dependency
+## Foundational Dependencies
 
-This project now treats `external/haipipe-toolkit` as the formal haipipe
-toolkit submodule. The submodule points to the current source of the `haipipe`
-package:
+This project treats the repositories from the original project brief as
+foundational dependencies under `external/`:
 
 ```text
 external/haipipe-toolkit -> https://github.com/JHU-CDHAI/WellDoc-SPACE.git
+external/tools           -> https://github.com/jluo41/Tools.git
+external/codex-oauth     -> https://github.com/zeron-G/codex_oauth.git
 ```
 
-That upstream repository is private, so recursive clone and toolkit install
-require GitHub access to `JHU-CDHAI/WellDoc-SPACE`.
+Roles:
 
-Install the toolkit from the submodule when running real WellDoc/haipipe
-loaders:
+- `haipipe-toolkit`: current `haipipe`/WellDoc source for patient records,
+  stores, cases, models, and future real-data loaders.
+- `tools`: research/plugin/skill toolkit, including haipipe workflow skills and
+  discovery utilities.
+- `codex-oauth`: preferred local Codex OAuth LLM transport. When installed, the
+  `codex_oauth` provider uses this package first and only falls back to the
+  built-in compatibility client when the package is absent.
+
+`JHU-CDHAI/WellDoc-SPACE` is private, so recursive clone and haipipe install
+require GitHub access to that organization repository.
+
+Set up the lighter foundations:
+
+```powershell
+scripts/setup_foundations.ps1
+```
+
+Install the heavier haipipe toolkit when running real WellDoc/haipipe loaders:
 
 ```bash
 python -m pip install -e external/haipipe-toolkit
@@ -65,9 +81,9 @@ Or use the helper:
 scripts/setup_haipipe_toolkit.ps1
 ```
 
-The default sample-data path still runs without installing the heavy haipipe
-dependency. Each run manifest records whether the submodule is present and
-whether `haipipe` is importable.
+The default sample-data path still runs without installing the heavy haipipe or
+Codex OAuth dependencies. Each run manifest records whether all foundational
+submodules are present and whether installable packages are importable.
 
 Smoke test:
 
@@ -85,8 +101,8 @@ Provider options:
 - `mock`: local deterministic report drafting. This is the default and is good
   for pipeline testing.
 - `codex_oauth`: reads the local Codex OAuth session and calls the Codex
-  responses route, following the design in
-  `../HAI-Agent/packages/codex-oauth`.
+  responses route. It prefers the foundational `external/codex-oauth` package
+  when installed.
 - `openai_compatible`: calls an OpenAI-compatible `/responses` endpoint.
 
 Example with Codex OAuth:
@@ -113,8 +129,8 @@ the local tunnel port.
 The default config references:
 
 - `external/haipipe-toolkit`: formal haipipe toolkit submodule
-- `external/haipipe-toolkit/Tools`: Tools path inside the toolkit source tree
-- `../HAI-Agent/packages/codex-oauth`: local Codex OAuth package path
+- `external/tools`: formal Tools submodule
+- `external/codex-oauth`: formal Codex OAuth submodule
 
 The next integration step is to add concrete loaders for WellDoc/haipipe
 per-patient stores and wrappers for useful Tools search/discovery utilities.

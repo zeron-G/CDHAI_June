@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import asyncio
 import json
 import os
 import time
@@ -77,6 +78,15 @@ class CodexOAuthClient(LLMClient):
         self.auth_path = Path(config.codex_auth_path).expanduser() if config.codex_auth_path else _default_codex_auth_path()
 
     def generate(self, *, system: str, prompt: str) -> str:
+        package_response = _generate_with_codex_oauth_package(
+            system=system,
+            prompt=prompt,
+            model=self.config.model,
+            auth_path=str(self.auth_path) if self.auth_path else None,
+        )
+        if package_response is not None:
+            return package_response
+
         session = self._ensure_fresh_session()
         payload = {
             "model": self.config.model,
@@ -161,6 +171,36 @@ def build_llm_client(config: LLMConfig) -> LLMClient:
     raise ValueError(f"Unsupported LLM provider: {config.provider}")
 
 
+def _generate_with_codex_oauth_package(
+    *,
+    system: str,
+    prompt: str,
+    model: str,
+    auth_path: str | None,
+) -> str | None:
+    try:
+        from codex_oauth import CodexOAuthClient as PackageCodexOAuthClient
+    except ImportError:
+        return None
+
+    async def run() -> str:
+        async with PackageCodexOAuthClient(model=model, auth_path=auth_path) as client:
+            response = await client.complete(
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            return response.content
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(run())
+
+    raise RuntimeError("codex_oauth provider cannot run inside an active event loop in the sync CLI path.")
+
+
 def _default_codex_auth_path() -> Path:
     home = os.environ.get("HOME") or os.environ.get("USERPROFILE")
     if not home:
@@ -217,4 +257,3 @@ def _extract_sse_text(raw: str) -> str:
     if completed_payload:
         return _extract_response_text(completed_payload)
     return raw
-

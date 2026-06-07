@@ -90,8 +90,10 @@ class ExternalConfig:
     haipipe_toolkit_path: Path = Path("external/haipipe-toolkit")
     haipipe_toolkit_url: str = "https://github.com/JHU-CDHAI/WellDoc-SPACE.git"
     welldoc_space_path: Path = Path("external/haipipe-toolkit")
-    tools_path: Path = Path("external/haipipe-toolkit/Tools")
-    codex_oauth_package_path: Path = Path("../HAI-Agent/packages/codex-oauth")
+    tools_path: Path = Path("external/tools")
+    tools_url: str = "https://github.com/jluo41/Tools.git"
+    codex_oauth_package_path: Path = Path("external/codex-oauth")
+    codex_oauth_url: str = "https://github.com/zeron-G/codex_oauth.git"
 
 
 @dataclass(slots=True)
@@ -165,8 +167,10 @@ def _build_external_config(raw: dict[str, Any]) -> ExternalConfig:
             raw.get("haipipe_toolkit_url", "https://github.com/JHU-CDHAI/WellDoc-SPACE.git")
         ),
         welldoc_space_path=Path(str(raw.get("welldoc_space_path", "external/haipipe-toolkit"))),
-        tools_path=Path(str(raw.get("tools_path", "external/haipipe-toolkit/Tools"))),
-        codex_oauth_package_path=Path(str(raw.get("codex_oauth_package_path", "../HAI-Agent/packages/codex-oauth"))),
+        tools_path=Path(str(raw.get("tools_path", "external/tools"))),
+        tools_url=str(raw.get("tools_url", "https://github.com/jluo41/Tools.git")),
+        codex_oauth_package_path=Path(str(raw.get("codex_oauth_package_path", "external/codex-oauth"))),
+        codex_oauth_url=str(raw.get("codex_oauth_url", "https://github.com/zeron-G/codex_oauth.git")),
     )
 
 
