@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Local data, credentials, and generated analysis artifacts.
+.env
+runs/
+personal_knowledge_base/
+*.sqlite
+*.db
+*.parquet
+*.xlsx
+*.xls
+
+# OS/editor noise.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

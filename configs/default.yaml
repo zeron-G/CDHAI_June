@@ -1,0 +1,41 @@
+analysis:
+  max_narrative_cycles: 5
+  output_dir: runs
+  timezone: America/New_York
+  min_numeric_non_null: 5
+  plot: true
+  cgm:
+    low_mgdl: 70
+    very_low_mgdl: 54
+    target_low_mgdl: 70
+    target_high_mgdl: 180
+    very_high_mgdl: 250
+  hypothesis:
+    max_per_cycle: 3
+    alpha: 0.05
+
+llm:
+  provider: ${CDHAI_LLM_PROVIDER:mock}
+  model: ${CDHAI_LLM_MODEL:gpt-4o-mini}
+  temperature: 0.2
+  max_output_tokens: 1800
+  codex_auth_path: ${CDHAI_CODEX_AUTH_PATH:}
+  openai_base_url: ${CDHAI_OPENAI_BASE_URL:https://api.openai.com/v1}
+  openai_api_key: ${CDHAI_OPENAI_API_KEY:}
+
+external:
+  welldoc_space_path: ${CDHAI_WELLDOC_SPACE_PATH:../WellDoc-SPACE}
+  tools_path: ${CDHAI_TOOLS_PATH:../WellDoc-SPACE/Tools}
+  codex_oauth_package_path: ${CDHAI_CODEX_OAUTH_PACKAGE_PATH:../HAI-Agent/packages/codex-oauth}
+
+database:
+  ssh_host: ${CDHAI_DB_SSH_HOST:10.175.198.65}
+  ssh_user: ${CDHAI_DB_SSH_USER:rgao28}
+  ssh_port: ${CDHAI_DB_SSH_PORT:22}
+  ssh_key_path: ${CDHAI_DB_SSH_KEY_PATH:}
+  tunnel_local_port: ${CDHAI_DB_TUNNEL_LOCAL_PORT:15432}
+  remote_host: ${CDHAI_DB_REMOTE_HOST:127.0.0.1}
+  remote_port: ${CDHAI_DB_REMOTE_PORT:5432}
+  db_name: ${CDHAI_DB_NAME:}
+  db_user: ${CDHAI_DB_USER:}
+  db_password: ${CDHAI_DB_PASSWORD:}
