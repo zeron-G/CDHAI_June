@@ -180,6 +180,21 @@ def _cycle_research_markdown(
                 f"- `{row.get('hypothesis_id')}` p={_fmt(row.get('p_value'))}, "
                 f"Holm threshold={_fmt(row.get('holm_threshold'))}: {decision}."
             )
+    task_cycle = cycle_research_review.get("task_cycle", {})
+    if task_cycle:
+        gate = task_cycle.get("gate_decision", {})
+        lines.extend(["", "### Exploration Task Chain and Evidence Gate"])
+        lines.append(
+            f"- Task chain: {task_cycle.get('task_count', 0)} tasks across "
+            f"{task_cycle.get('rounds_executed', 0)} round(s)."
+        )
+        lines.append(f"- Evidence gate: `{gate.get('status')}` — {gate.get('reason')}")
+        for task in task_cycle.get("tasks", [])[:8]:
+            lines.append(f"  - `{task.get('task_id')}` `{task.get('type')}` `{task.get('status')}`: {task.get('summary')}")
+        for row in gate.get("hypothesis_decisions", [])[:8]:
+            lines.append(
+                f"  - `{row.get('hypothesis_id')}` decision=`{row.get('decision')}`; {row.get('reason')}"
+            )
     lines.extend(["", _figure_markdown(research_context, reports_dir), "", _references_markdown(research_context)])
     return "\n".join(lines)
 
@@ -191,6 +206,8 @@ def _final_research_markdown(
 ) -> str:
     lines = ["## Research Integrity Summary", ""]
     lines.append(f"- Cycles requested: {manifest.get('cycles_requested')}; cycle reports produced: {len(manifest.get('cycle_reports', []))}.")
+    gated = [item for item in manifest.get("cycle_reports", []) if item.get("gate_decision")]
+    lines.append(f"- Evidence-gated task chains recorded: {len(gated)}.")
     lines.append("- Claim boundary: all findings are exploratory N-of-1 evidence unless externally replicated.")
     lines.append("- Citation boundary: final text should cite only the manifest below until external discovery verifies new sources.")
     lines.extend(["", _figure_markdown(research_context, reports_dir), "", _references_markdown(research_context)])

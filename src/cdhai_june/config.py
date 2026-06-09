@@ -8,7 +8,6 @@ from typing import Any
 
 import yaml
 
-
 _ENV_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::([^}]*))?\}")
 
 
@@ -64,6 +63,16 @@ class HypothesisConfig:
 
 
 @dataclass(slots=True)
+class TaskCycleConfig:
+    enabled: bool = True
+    max_rounds: int = 3
+    min_completed_tasks: int = 5
+    require_neural_network: bool = True
+    neural_network_epochs: int = 250
+    neural_network_hidden_units: int = 4
+
+
+@dataclass(slots=True)
 class AnalysisConfig:
     max_narrative_cycles: int = 5
     output_dir: Path = Path("runs")
@@ -72,6 +81,7 @@ class AnalysisConfig:
     plot: bool = True
     cgm: CGMThresholds = field(default_factory=CGMThresholds)
     hypothesis: HypothesisConfig = field(default_factory=HypothesisConfig)
+    task_cycle: TaskCycleConfig = field(default_factory=TaskCycleConfig)
 
 
 @dataclass(slots=True)
@@ -130,6 +140,7 @@ def _load_raw_config(path: Path | None) -> dict[str, Any]:
 def _build_analysis_config(raw: dict[str, Any]) -> AnalysisConfig:
     cgm_raw = raw.get("cgm", {}) or {}
     hyp_raw = raw.get("hypothesis", {}) or {}
+    task_raw = raw.get("task_cycle", {}) or {}
     return AnalysisConfig(
         max_narrative_cycles=_as_int(raw.get("max_narrative_cycles"), 5),
         output_dir=Path(str(raw.get("output_dir", "runs"))),
@@ -146,6 +157,14 @@ def _build_analysis_config(raw: dict[str, Any]) -> AnalysisConfig:
         hypothesis=HypothesisConfig(
             max_per_cycle=_as_int(hyp_raw.get("max_per_cycle"), 3),
             alpha=_as_float(hyp_raw.get("alpha"), 0.05),
+        ),
+        task_cycle=TaskCycleConfig(
+            enabled=_as_bool(task_raw.get("enabled", True)),
+            max_rounds=_as_int(task_raw.get("max_rounds"), 3),
+            min_completed_tasks=_as_int(task_raw.get("min_completed_tasks"), 5),
+            require_neural_network=_as_bool(task_raw.get("require_neural_network", True)),
+            neural_network_epochs=_as_int(task_raw.get("neural_network_epochs"), 250),
+            neural_network_hidden_units=_as_int(task_raw.get("neural_network_hidden_units"), 4),
         ),
     )
 

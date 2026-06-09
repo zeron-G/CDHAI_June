@@ -6,7 +6,6 @@ from typing import Any
 from cdhai_june.models import TestResult
 from cdhai_june.utils import compact_text
 
-
 BASIC_REPORT_SYSTEM = (
     "You are a careful biomedical research analyst writing a paper-grade baseline "
     "report from deterministic patient-data outputs. Do not give medical advice. "

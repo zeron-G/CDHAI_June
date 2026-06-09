@@ -384,9 +384,10 @@ class HypothesisTester:
 
     @staticmethod
     def _event_metrics(dataset: PatientDataset) -> dict[str, Any]:
+        from tempfile import TemporaryDirectory
+
         from cdhai_june.analysis.events import analyze_events
         from cdhai_june.config import AnalysisConfig
-        from tempfile import TemporaryDirectory
 
         with TemporaryDirectory() as temp_dir:
             return analyze_events(dataset, AnalysisConfig(plot=False), Path(temp_dir))

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +67,7 @@ def build_cycle_research_review(
     research_context: dict[str, Any],
     cycle_dir: Path,
     analysis_config: AnalysisConfig,
+    task_chain: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     cycle_dir.mkdir(parents=True, exist_ok=True)
     stats_rows = [_stat_row(result) for result in results]
@@ -101,6 +102,7 @@ def build_cycle_research_review(
             "baseline_source": "analysis/ml_prediction_metrics.json",
             "required_claim": "ML results are a triangulation baseline, not a validated clinical prediction model.",
         },
+        "task_cycle": task_chain or {},
         "visualization_audit": research_context.get("figure_index", {}),
         "claim_integrity_gate": {
             "allowed_references_only": [item["id"] for item in research_context.get("reference_manifest", {}).get("references", [])],
@@ -506,4 +508,4 @@ def _figure_role(path: Path) -> str:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()

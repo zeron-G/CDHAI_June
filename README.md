@@ -10,9 +10,10 @@ The default loop runs 5 cycles and can be changed with `--cycles` or
 
 Each report cycle is intended to be a research loop, not a loose test pass:
 the pipeline now emits a literature-backed research protocol, explicit
-hypotheses, mathematical definitions, statistical/effect-size audit tables,
-a simple ML prediction baseline, figure index, reference manifest, and
-claim-integrity guardrails before asking the LLM to write narrative text.
+hypotheses, a task-cycle exploration chain, mathematical definitions,
+statistical/effect-size audit tables, neural-network prediction tasks, figure
+indexes, reference manifests, evidence gates, and claim-integrity guardrails
+before asking the LLM to write narrative text.
 
 ## Why This Shape
 
@@ -115,6 +116,17 @@ analysis/
 cycles/cycle_XX/
   hypotheses.json
   test_results.json
+  task_chain/
+    task_graph.json
+    evidence_ledger.json
+    gate_decision.json
+    task_001_literature_search/
+      config/
+      scripts/
+      runs/
+      results/
+      images/
+      notebooks/
   research_cycle_review.json
 ```
 
@@ -125,11 +137,20 @@ reference manifest unless a future external-discovery adapter verifies new
 sources. Single-patient associations are always framed as exploratory evidence,
 not clinical guidance.
 
+Inside each narrative cycle, `TaskCycleRunner` creates a bounded exploration
+loop. It plans and executes allowlisted tasks for literature mapping, feature
+engineering, statistical packaging, neural-network training/prediction,
+visualization, and result interpretation. If the evidence gate still sees a
+gap, it can dispatch follow-up sensitivity or evidence-gap tasks until
+`analysis.task_cycle.max_rounds` is reached. Only a `ready_for_insight` gate
+allows the cycle to move into the insight/report stage.
+
 Smoke test:
 
 ```bash
 python -m cdhai_june run --input examples/sample_patient.csv --patient-id demo --cycles 2 --llm-provider mock
 python -m pytest
+python -m ruff check src tests
 ```
 
 Generated artifacts are written under `runs/` and are ignored by git.
@@ -194,3 +215,14 @@ runs/
 
 Each cycle stores its hypotheses, statistical test results, and report. The
 final report links evidence across the earlier reports.
+
+## CI/CD
+
+GitHub Actions are configured under `.github/workflows/`:
+
+- `ci.yml`: ruff lint, pytest on Ubuntu/Windows with Python 3.11 and 3.12,
+  mock pipeline smoke run, package build, and artifact upload.
+- `release.yml`: tag/manual release artifact build after tests pass.
+
+The CI path intentionally does not initialize private/heavy submodules, so the
+default mock/sample-data workflow remains reproducible in a clean public runner.

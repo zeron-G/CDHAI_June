@@ -17,4 +17,8 @@ Expected:
 - `analysis/research_protocol.json`, `analysis/reference_manifest.json`,
   `analysis/figure_index.json`, and `analysis/ml_prediction_metrics.json` exist.
 - Each `cycles/cycle_XX/` directory contains `research_cycle_review.json`.
+- Each `cycles/cycle_XX/task_chain/` directory contains `task_graph.json`,
+  `evidence_ledger.json`, `gate_decision.json`, and task directories with
+  `config/`, `scripts/`, `runs/`, `results/`, `images/`, and `notebooks/`.
 - Reports include deterministic figure links and a reference manifest section.
+- CI validates ruff, pytest, mock pipeline smoke run, and package build.

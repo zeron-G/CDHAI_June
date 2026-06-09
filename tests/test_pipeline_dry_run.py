@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cdhai_june.config import AppConfig, AnalysisConfig, LLMConfig
+from cdhai_june.config import AnalysisConfig, AppConfig, LLMConfig
 from cdhai_june.pipeline import PatientAnalysisPipeline
 
 
@@ -21,3 +21,7 @@ def test_pipeline_dry_run_creates_reports(tmp_path: Path) -> None:
     assert Path(manifest["research_artifacts"]["reference_manifest"]).exists()
     assert len(manifest["cycle_reports"]) == 2
     assert Path(manifest["cycle_reports"][0]["research_cycle_review"]).exists()
+    assert Path(manifest["cycle_reports"][0]["task_chain"]).exists()
+    assert Path(manifest["cycle_reports"][0]["gate_decision"]).exists()
+    assert manifest["cycle_reports"][0]["insight_stage_allowed"] is True
+    assert manifest["cycle_reports"][0]["insights_persisted"] >= 1

@@ -10,7 +10,11 @@
 6. Persist reports and insights into a patient knowledge base.
 7. Add paper-grade research artifacts: protocol, literature matrix, reference
    manifest, figure index, ML prediction baseline, and cycle audit.
-8. Verify with smoke test and unit tests.
+8. Add task-cycle exploration chain with task graph, scripts/config/results,
+   neural-network task execution, visualizations, evidence ledger, and gate.
+9. Add CI/CD: lint, test matrix, pipeline smoke run, package build, release
+   artifact workflow.
+10. Verify with smoke test and unit tests.
 
 ## Risks
 
@@ -21,3 +25,5 @@
   advice.
 - Citation metadata and literature claims must remain explicit and re-verifiable
   before publication.
+- Task-cycle scripts are generated as reproducibility artifacts; they should not
+  become an arbitrary-code execution path without sandboxing.

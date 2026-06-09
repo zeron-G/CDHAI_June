@@ -17,6 +17,7 @@ from cdhai_june.llm import build_llm_client
 from cdhai_june.models import RunPaths
 from cdhai_june.reporting import ReportWriter
 from cdhai_june.research import build_cycle_research_review, build_research_context
+from cdhai_june.task_cycle import TaskCycleRunner
 from cdhai_june.utils import write_json
 
 
@@ -28,6 +29,7 @@ class PatientAnalysisPipeline:
         self.basic_analyzer = BasicAnalyzer(config.analysis)
         self.hypothesis_planner = HypothesisPlanner(config.analysis)
         self.hypothesis_tester = HypothesisTester(config.analysis)
+        self.task_cycle_runner = TaskCycleRunner(config.analysis)
 
     def run(self, input_path: str | Path, patient_id: str | None = None) -> dict[str, Any]:
         dataset = load_patient_dataset(input_path, patient_id=patient_id)
@@ -103,6 +105,15 @@ class PatientAnalysisPipeline:
             )
             results = [self.hypothesis_tester.test(dataset, hypothesis, cycle_dir) for hypothesis in hypotheses]
             write_cycle_payload(cycle_dir, hypotheses, results)
+            task_chain = self.task_cycle_runner.run(
+                cycle=cycle,
+                dataset=dataset,
+                hypotheses=hypotheses,
+                statistical_results=results,
+                basic_profile=basic_profile,
+                research_context=research_context,
+                cycle_dir=cycle_dir,
+            )
             cycle_research_review = build_cycle_research_review(
                 cycle=cycle,
                 hypotheses=hypotheses,
@@ -110,6 +121,7 @@ class PatientAnalysisPipeline:
                 research_context=research_context,
                 cycle_dir=cycle_dir,
                 analysis_config=self.config.analysis,
+                task_chain=task_chain,
             )
             kb.add_hypotheses(run_id=run_id, cycle=cycle, hypotheses=[hypothesis.to_json() for hypothesis in hypotheses])
 
@@ -131,13 +143,19 @@ class PatientAnalysisPipeline:
                 report_path=report_path,
                 summary=report_summary,
             )
-            kb.add_insights(run_id=run_id, insights=insights)
+            persisted_insights = insights if task_chain.get("insight_stage_allowed") else []
+            if persisted_insights:
+                kb.add_insights(run_id=run_id, insights=persisted_insights)
             manifest["cycle_reports"].append(
                 {
                     "cycle": cycle,
                     "report_path": str(report_path),
                     "cycle_dir": str(cycle_dir),
                     "research_cycle_review": str(cycle_dir / "research_cycle_review.json"),
+                    "task_chain": str(cycle_dir / "task_chain" / "task_chain_summary.json"),
+                    "gate_decision": str(cycle_dir / "task_chain" / "gate_decision.json"),
+                    "insight_stage_allowed": bool(task_chain.get("insight_stage_allowed")),
+                    "insights_persisted": len(persisted_insights),
                     "hypotheses": [hypothesis.to_json() for hypothesis in hypotheses],
                     "results": [result.to_json() for result in results],
                 }

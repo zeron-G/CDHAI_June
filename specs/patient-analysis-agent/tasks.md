@@ -14,3 +14,7 @@
 - [x] Add research protocol, reference manifest, figure index, and cycle audit.
 - [x] Add deterministic next-glucose ML prediction baseline.
 - [x] Upgrade prompts/reports to require paper-grade research sections.
+- [x] Add per-cycle task-chain exploration loop and evidence gate.
+- [x] Add neural-network development/training/prediction task artifact.
+- [x] Add CI workflow for lint, tests, smoke run, package artifact.
+- [x] Add release workflow for tag/manual package artifact.

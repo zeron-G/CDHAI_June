@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 
 from cdhai_june.models import PatientDataset
-
 
 SUPPORTED_EXTENSIONS = {".csv", ".tsv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls"}
 

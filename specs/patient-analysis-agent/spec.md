@@ -28,6 +28,8 @@ configurable number of cycles.
   detected.
 - Research protocol, literature matrix, verified reference manifest, figure
   index, ML prediction baseline, and per-cycle research audit.
+- Per-cycle task-chain artifacts: task graph, task configs, scripts, runs,
+  results, images, notebook stubs, evidence ledger, and gate decision.
 - Cycle reports for each narrative/probe iteration.
 - A persistent personal knowledge base under `runs/personal_knowledge_base`.
 - Final structured manifest for application handoff.
@@ -39,8 +41,14 @@ configurable number of cycles.
   mechanistic rationale, mathematical/statistical formulation, effect-size-aware
   test result, ML triangulation when relevant, visualization links, limitations,
   and references.
+- Each report cycle must pass through a task-cycle evidence gate before insight
+  writing. The gate can dispatch additional exploration tasks until evidence is
+  sufficient, explicitly non-significant, or documented as a bounded evidence
+  gap.
 - LLM output is parsed into schemas or treated as text only.
 - Statistical tests are selected from an allowlist.
+- Task-cycle execution is allowlisted package code. Generated scripts are
+  reproducibility artifacts, not arbitrary model-authored code to execute.
 - Unsupported, skipped, or underpowered findings are reported as evidence gaps,
   not as proof of no relationship.
 - Reports cite only `reference_manifest.json` entries unless a future external
@@ -62,5 +70,8 @@ configurable number of cycles.
   integrity checks as the foundation for literature review, preregistration,
   IMRAD reporting, statistical reporting, peer-review-style critique, and final
   citation/claim verification.
+- Task cycle: add new task executors for future deep models, external literature
+  discovery, notebooks, and sensitivity tests behind the same evidence-gate
+  contract.
 - Application: expose `manifest.json` and reports to message, UI checklist, and
   suggestion generators.

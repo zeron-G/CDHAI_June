@@ -13,6 +13,13 @@ analysis:
   hypothesis:
     max_per_cycle: 3
     alpha: 0.05
+  task_cycle:
+    enabled: true
+    max_rounds: 3
+    min_completed_tasks: 5
+    require_neural_network: true
+    neural_network_epochs: 250
+    neural_network_hidden_units: 4
 
 llm:
   provider: ${CDHAI_LLM_PROVIDER:mock}
