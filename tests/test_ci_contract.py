@@ -19,3 +19,5 @@ def test_ci_workflows_exist_and_cover_core_gates() -> None:
     assert "actions/setup-python@v6" in ci_text
     assert "actions/checkout@v6" in release_text
     assert "actions/setup-python@v6" in release_text
+    assert "windows-2025-vs2026" in ci_text
+    assert "windows-latest" not in ci_text
