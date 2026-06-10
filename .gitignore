@@ -13,6 +13,7 @@ build/
 # Local data, credentials, and generated analysis artifacts.
 .env
 runs/
+reports/
 personal_knowledge_base/
 *.sqlite
 *.db

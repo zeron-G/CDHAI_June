@@ -25,3 +25,24 @@ def test_pipeline_dry_run_creates_reports(tmp_path: Path) -> None:
     assert Path(manifest["cycle_reports"][0]["gate_decision"]).exists()
     assert manifest["cycle_reports"][0]["insight_stage_allowed"] is True
     assert manifest["cycle_reports"][0]["insights_persisted"] >= 1
+    cycle_report_text = Path(manifest["cycle_reports"][0]["report_path"]).read_text(encoding="utf-8")
+    assert "Task-Cycle Artifacts" in cycle_report_text
+    assert "statistical_evidence_overview.png" in cycle_report_text
+    assert "nn_observed_vs_predicted.png" in cycle_report_text
+
+
+def test_pipeline_sanitizes_patient_id_for_output_paths(tmp_path: Path) -> None:
+    sample = Path(__file__).parents[1] / "examples" / "sample_patient.csv"
+    config = AppConfig(
+        analysis=AnalysisConfig(max_narrative_cycles=1, output_dir=tmp_path, plot=False),
+        llm=LLMConfig(provider="mock"),
+    )
+
+    manifest = PatientAnalysisPipeline(config).run(sample, patient_id="..\\escape/patient")
+
+    run_dir = Path(manifest["paths"]["run_dir"]).resolve()
+    assert run_dir.is_relative_to(tmp_path.resolve())
+    assert manifest["patient_id"] == "..\\escape/patient"
+    assert manifest["patient_path_segment"] != manifest["patient_id"]
+    assert "\\" not in manifest["patient_path_segment"]
+    assert "/" not in manifest["patient_path_segment"]

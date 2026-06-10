@@ -137,6 +137,10 @@ reference manifest unless a future external-discovery adapter verifies new
 sources. Single-patient associations are always framed as exploratory evidence,
 not clinical guidance.
 
+Cycle reports embed or link the task-chain artifacts produced by each
+exploration step, including JSON evidence ledgers, CSV prediction outputs,
+Markdown literature matrices, and PNG visualizations.
+
 Inside each narrative cycle, `TaskCycleRunner` creates a bounded exploration
 loop. It plans and executes allowlisted tasks for literature mapping, feature
 engineering, statistical packaging, neural-network training/prediction,
@@ -202,10 +206,10 @@ per-patient stores and wrappers for useful Tools search/discovery utilities.
 
 ```text
 runs/
-  personal_knowledge_base/<patient_id>/
+  personal_knowledge_base/<patient_path_segment>/
     insights.jsonl
     reports.jsonl
-  <patient_id>/<run_id>/
+  <patient_path_segment>/<run_id>/
     analysis/
     cycles/
       cycle_XX/research_cycle_review.json
@@ -213,8 +217,10 @@ runs/
     manifest.json
 ```
 
-Each cycle stores its hypotheses, statistical test results, and report. The
-final report links evidence across the earlier reports.
+`patient_id` remains in the manifest and reports, while `patient_path_segment`
+is a sanitized filesystem-safe slug used only for local output paths. Each
+cycle stores its hypotheses, statistical test results, task-chain artifacts,
+and report. The final report links evidence across the earlier reports.
 
 ## CI/CD
 

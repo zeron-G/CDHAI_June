@@ -18,7 +18,7 @@ from cdhai_june.models import RunPaths
 from cdhai_june.reporting import ReportWriter
 from cdhai_june.research import build_cycle_research_review, build_research_context
 from cdhai_june.task_cycle import TaskCycleRunner
-from cdhai_june.utils import write_json
+from cdhai_june.utils import safe_path_segment, write_json
 
 
 class PatientAnalysisPipeline:
@@ -34,7 +34,8 @@ class PatientAnalysisPipeline:
     def run(self, input_path: str | Path, patient_id: str | None = None) -> dict[str, Any]:
         dataset = load_patient_dataset(input_path, patient_id=patient_id)
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        paths = self._build_paths(dataset.patient_id, run_id)
+        patient_path_segment = safe_path_segment(dataset.patient_id, fallback="patient")
+        paths = self._build_paths(patient_path_segment, run_id)
         paths.ensure()
 
         kb = PersonalKnowledgeBase(paths.kb_dir)
@@ -63,6 +64,7 @@ class PatientAnalysisPipeline:
         manifest: dict[str, Any] = {
             "run_id": run_id,
             "patient_id": dataset.patient_id,
+            "patient_path_segment": patient_path_segment,
             "input_path": str(dataset.source_path),
             "llm_provider": self.llm_client.provider_name,
             "llm_model": self.config.llm.model,
@@ -180,16 +182,16 @@ class PatientAnalysisPipeline:
         write_json(paths.run_dir / "manifest.json", manifest)
         return manifest
 
-    def _build_paths(self, patient_id: str, run_id: str) -> RunPaths:
+    def _build_paths(self, patient_path_segment: str, run_id: str) -> RunPaths:
         output_root = self.config.analysis.output_dir.resolve()
-        run_dir = output_root / patient_id / run_id
+        run_dir = output_root / patient_path_segment / run_id
         return RunPaths(
             output_root=output_root,
             run_dir=run_dir,
             analysis_dir=run_dir / "analysis",
             cycles_dir=run_dir / "cycles",
             reports_dir=run_dir / "reports",
-            kb_dir=output_root / "personal_knowledge_base" / patient_id,
+            kb_dir=output_root / "personal_knowledge_base" / patient_path_segment,
         )
 
 

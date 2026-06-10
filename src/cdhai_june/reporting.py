@@ -195,6 +195,9 @@ def _cycle_research_markdown(
             lines.append(
                 f"  - `{row.get('hypothesis_id')}` decision=`{row.get('decision')}`; {row.get('reason')}"
             )
+        artifact_lines = _task_artifacts_markdown(task_cycle, reports_dir)
+        if artifact_lines:
+            lines.extend(["", "### Task-Cycle Artifacts", *artifact_lines])
     lines.extend(["", _figure_markdown(research_context, reports_dir), "", _references_markdown(research_context)])
     return "\n".join(lines)
 
@@ -226,6 +229,31 @@ def _figure_markdown(research_context: dict[str, Any], reports_dir: Path) -> str
         title = str(item.get("title", path.stem))
         lines.append(f"- `{item.get('figure_id')}` {title}: ![{title}]({rel_path})")
     return "\n".join(lines)
+
+
+def _task_artifacts_markdown(task_cycle: dict[str, Any], reports_dir: Path) -> list[str]:
+    lines: list[str] = []
+    seen: set[str] = set()
+    for task in task_cycle.get("tasks", []):
+        artifacts = task.get("artifacts", {})
+        if not isinstance(artifacts, dict):
+            continue
+        for label, raw_path in artifacts.items():
+            if not raw_path:
+                continue
+            path = Path(str(raw_path))
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            rel_path = _relative_link(path, reports_dir)
+            title = str(label).replace("_", " ").title()
+            suffix = path.suffix.lower()
+            if suffix == ".png":
+                lines.append(f"- `{task.get('task_id')}` {title}: ![{title}]({rel_path})")
+            elif suffix in {".json", ".csv", ".md"}:
+                lines.append(f"- `{task.get('task_id')}` {title}: [{path.name}]({rel_path})")
+    return lines[:16]
 
 
 def _references_markdown(research_context: dict[str, Any]) -> str:
