@@ -15,3 +15,7 @@ def test_ci_workflows_exist_and_cover_core_gates() -> None:
     assert "python -m cdhai_june run" in ci_text
     assert "python -m build" in ci_text
     assert "python -m build" in release_text
+    assert "actions/checkout@v6" in ci_text
+    assert "actions/setup-python@v6" in ci_text
+    assert "actions/checkout@v6" in release_text
+    assert "actions/setup-python@v6" in release_text
