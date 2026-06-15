@@ -14,3 +14,15 @@ def test_database_audit_scripts_expose_help() -> None:
         )
         assert result.returncode == 0
         assert "usage:" in result.stdout
+
+
+def test_a_user_store_builder_exposes_help() -> None:
+    root = Path(__file__).parents[1]
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts" / "build_a_user_store_composite.py"), "--help"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "usage:" in result.stdout
