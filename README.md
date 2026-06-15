@@ -206,6 +206,22 @@ export raw patient rows or categorical values. See
 `docs/database/server_database_audit_report.md` for the current access status,
 report format, and training/research integration plan.
 
+For the WellDoc-SPACE data lake discovered on the server, run the manifest
+audit on the server workspace root:
+
+```bash
+python3 scripts/welldoc_space_manifest_audit.py \
+  --base /nvme1/group_share/WellDoc-SPACE/_WorkSpace \
+  --output-json welldoc_space_manifest_summary.json \
+  --output-md welldoc_space_database_report.md
+```
+
+The manifest audit reads `manifest.json`, file paths, file sizes, and schema
+column names only. It is the preferred first pass for WellDoc-SPACE because the
+server data is organized as `SourceStore`, `RecStore`, `CaseStore`,
+`AIDataStore`, `ModelInstanceStore`, and `EndpointStore` rather than a single
+SQL database.
+
 ## External Repositories
 
 The default config references:

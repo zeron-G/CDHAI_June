@@ -5,7 +5,7 @@ from pathlib import Path
 
 def test_database_audit_scripts_expose_help() -> None:
     root = Path(__file__).parents[1]
-    for script in ["server_database_audit.py", "remote_database_audit.py"]:
+    for script in ["server_database_audit.py", "remote_database_audit.py", "welldoc_space_manifest_audit.py"]:
         result = subprocess.run(
             [sys.executable, str(root / "scripts" / script), "--help"],
             text=True,

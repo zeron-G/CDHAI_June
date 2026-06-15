@@ -7,11 +7,12 @@ Generated for CDHAI_June database onboarding.
 - SSH host: `10.175.198.65`
 - SSH port: `22`
 - Network reachability from this workstation: reachable on SSH.
-- Current blocker: SSH authentication requires a password or authorized key. No password, database password, or SSH key path is present in the process environment.
-- Data extracted during this audit attempt: none.
+- Current status: SSH authentication succeeded when the credential was supplied at runtime.
+- Data extracted during this audit: metadata reports only.
 - PHI/row-level patient data written locally: none.
 
-Because authentication is not available non-interactively, this repository now includes a safe audit workflow that can be run once credentials are supplied at runtime.
+The accessible server data is organized primarily as a WellDoc-SPACE workspace
+rather than as a conventional SQL database exposed to this account.
 
 ## Audit Tools
 
@@ -43,6 +44,26 @@ reports/database_audit/latest/
 
 `reports/` is ignored by git so audit artifacts are not accidentally committed.
 
+Run the WellDoc-SPACE manifest audit on the server workspace root:
+
+```bash
+python3 scripts/welldoc_space_manifest_audit.py \
+  --base /nvme1/group_share/WellDoc-SPACE/_WorkSpace \
+  --output-json welldoc_space_manifest_summary.json \
+  --output-md welldoc_space_database_report.md
+```
+
+This generated the following local, git-ignored artifacts:
+
+```text
+reports/database_audit/latest/
+  welldoc_space_manifest_summary.json
+  welldoc_space_database_report.md
+  CDHAI_database_research_readiness_report.md
+  figures/
+  tables/
+```
+
 ## What The Audit Collects
 
 The audit is aggregate-only by default:
@@ -65,6 +86,28 @@ The audit is aggregate-only by default:
   - columns and domain tags.
 
 The audit does not export raw rows, categorical values, names, emails, phone numbers, addresses, MRNs, dates of birth, tokens, passwords, or authentication values.
+
+## Current Server Findings
+
+- Host: `cdhai-Lambda-Vector`
+- Main data root: `/nvme1/group_share/WellDoc-SPACE/_WorkSpace`
+- Conventional database CLIs on PATH: no `psql`, `mysql`, `mariadb`, `mongosh`, or `sqlite3`; `redis-cli` is present and Redis listens on localhost.
+- `/share/welldocdata` is visible but empty.
+- `/home/cdhai` is not readable by the current account.
+- The WellDoc-SPACE workspace contains 659 parsed manifests:
+  - `CaseSet`: 458
+  - `RecordSet`: 151
+  - `AIDataSet`: 35
+  - `SourceSet`: 11
+  - `endpoint_set`: 3
+  - `unknown`: 1
+- Major data stores:
+  - `1-SourceStore`: WellDoc, OhioT1DM, CGMacros, Dubosson, Shanghai, AIREADI, and MIMIC-IV source families.
+  - `2-RecStore`: patient-time records such as `Ptt`, `CGM5Min`, `Diet5Min`, `Exercise5Min`, `Med5Min`, vitals/labs, and MIMIC events.
+  - `3-CaseStore`: model-ready case/window definitions for long time-series, event response, FairGlucose, and MIMIC admission tasks.
+  - `4-AIDataStore`: training splits for EventGlucose, FairGlucose, PretrainGlucose, PretrainCGM_Stride4H, OhioT1DM, and MIMIC admission tasks.
+  - `5-ModelInstanceStore`: existing model checkpoints, trainer states, result JSON, and figures.
+  - `6-EndpointStore`: OhioT1DM CGM forecast/LTS endpoints plus two USDA nutrition SQLite assets.
 
 ## Expected Database Signals For CDHAI_June
 
@@ -118,4 +161,7 @@ The project can use the database immediately once these domain signals are mappe
 
 ## Next Required Action
 
-Run the remote audit command above after supplying the SSH password interactively, then use `reports/database_audit/latest/database_inventory_report.md` as the concrete database report. The JSON inventory can drive the next implementation step: database-specific loaders for CDHAI_June.
+Use `reports/database_audit/latest/CDHAI_database_research_readiness_report.md`
+as the concrete onboarding report, then implement a `WellDocWorkspaceLoader`
+that reads server manifests, materializes de-identified single-patient bundles,
+and feeds the existing CDHAI_June task-cycle research loop.
