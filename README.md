@@ -189,6 +189,23 @@ Use the JHU VPN before connecting to the configured SSH host. If a tunnel is
 needed, create it outside the pipeline, then point future database loaders at
 the local tunnel port.
 
+To inventory the server safely before building real loaders, use the aggregate
+database audit tools:
+
+```powershell
+python scripts/remote_database_audit.py `
+  --host 10.175.198.65 `
+  --user rgao28 `
+  --ask-password `
+  --local-output-dir reports/database_audit/latest
+```
+
+The remote audit writes only schema, table sizes, row counts, missingness,
+numeric/date ranges for non-sensitive columns, and domain tags. It does not
+export raw patient rows or categorical values. See
+`docs/database/server_database_audit_report.md` for the current access status,
+report format, and training/research integration plan.
+
 ## External Repositories
 
 The default config references:
