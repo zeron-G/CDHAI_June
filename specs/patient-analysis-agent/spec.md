@@ -10,7 +10,9 @@ configurable number of cycles.
 ## Non-goals
 
 - Do not build a patient-facing UI in this first project.
-- Do not train or deploy glucose forecasting models here.
+- Do not duplicate or silently modify glucose-model architecture in this
+  repository. Delegate training, patient adaptation, calibration, and model
+  fallback to the pinned external CDHAI-HAPF dependency.
 - Do not directly store database passwords or OAuth tokens.
 - Do not let model-generated code execute without a future sandbox and review
   gate.
@@ -30,6 +32,8 @@ configurable number of cycles.
   index, ML prediction baseline, and per-cycle research audit.
 - Per-cycle task-chain artifacts: task graph, task configs, scripts, runs,
   results, images, notebook stubs, evidence ledger, and gate decision.
+- Per-cycle HAPF readiness, population/personalized/deployed forecast evidence,
+  calibration-gate decision, visualization, and subject-safe cached result.
 - Cycle reports for each narrative/probe iteration.
 - A persistent personal knowledge base under `runs/personal_knowledge_base`.
 - Final structured manifest for application handoff.
@@ -55,13 +59,16 @@ configurable number of cycles.
   discovery step verifies and adds new sources.
 - Artifacts are reproducible from config, input path, and run id.
 - Secrets and patient-identifiable data remain outside git.
+- HAPF target identifiers never appear in cycle reports or task evidence;
+  selection uses the raw key only inside the model call and cache fingerprint.
 
 ## Extension Points
 
 - WellDoc loader: map `Ptt`, `CGM5Min`, `Diet5Min`, `Exercise5Min`, and
   `Med5Min` records into the project `PatientDataset` shape.
 - Foundation dependencies: keep `external/haipipe-toolkit`, `external/tools`,
-  `external/codex-oauth`, and `external/academic-research-skills` as first-class
+  `external/codex-oauth`, `external/academic-research-skills`, and
+  `external/cdhai-hapf` as first-class
   submodules. Prefer installed packages/adapters from those foundations before
   using built-in fallback code.
 - Tools/search: add an external discovery adapter from `external/tools` that
@@ -73,5 +80,8 @@ configurable number of cycles.
 - Task cycle: add new task executors for future deep models, external literature
   discovery, notebooks, and sensitivity tests behind the same evidence-gate
   contract.
+- Personalized forecasting: use the HAPF adapter contract for cohort readiness,
+  patient-safe holdout resolution, cache reuse, calibration gating, and evidence
+  handoff to every cycle.
 - Application: expose `manifest.json` and reports to message, UI checklist, and
   suggestion generators.

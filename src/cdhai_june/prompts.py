@@ -18,6 +18,8 @@ CYCLE_REPORT_SYSTEM = (
     "report from hypotheses, deterministic test results, and the research audit. "
     "Include literature context, hypothesis, mechanism, mathematical/statistical "
     "formulation, ML relevance, falsification, figures, limitations, and next probes. "
+    "When HAPF evidence is present, compare population, personalized, and deployed forecasts, "
+    "state the calibration-gate decision, and preserve its exploratory boundary. "
     "Do not disclose hidden chain-of-thought or make clinical recommendations. "
     "Cite only supplied reference ids."
 )
@@ -83,6 +85,7 @@ def cycle_report_prompt(
                 "Mathematical/statistical formulation",
                 "Statistical evidence with effect size and correction",
                 "Machine-learning triangulation",
+                "HAPF personalized forecasting, calibration gate, and population fallback",
                 "Visualization results",
                 "Cross-report relationships",
                 "Limitations and data-quality threats",
@@ -117,6 +120,7 @@ def final_report_prompt(
                 "Cross-cycle results",
                 "Mathematical and statistical evidence",
                 "Machine-learning prediction evidence",
+                "Cross-cycle HAPF personalization and calibration-gate evidence",
                 "Figures",
                 "Citation and claim-integrity audit",
                 "Weak or conflicting evidence",

@@ -14,7 +14,7 @@ from cdhai_june.prompts import (
     cycle_report_prompt,
     final_report_prompt,
 )
-from cdhai_june.utils import compact_text
+from cdhai_june.utils import compact_text, stable_subject_alias
 
 
 class ReportWriter:
@@ -28,10 +28,16 @@ class ReportWriter:
         research_context: dict[str, Any],
         reports_dir: Path,
     ) -> tuple[Path, str]:
+        patient_alias = stable_subject_alias(patient_id)
         text = self.llm_client.generate(
             system=BASIC_REPORT_SYSTEM,
-            prompt=basic_report_prompt(patient_id, basic_profile, research_context),
+            prompt=basic_report_prompt(
+                patient_alias,
+                _redact_identifier(basic_profile, patient_id, patient_alias),
+                _redact_identifier(research_context, patient_id, patient_alias),
+            ),
         )
+        text = text.replace(patient_id, patient_alias)
         report = (
             "# Baseline Data Report\n\n"
             + text.strip()
@@ -56,19 +62,23 @@ class ReportWriter:
         cycle_research_review: dict[str, Any],
         reports_dir: Path,
     ) -> tuple[Path, str, list[Insight]]:
+        patient_alias = stable_subject_alias(patient_id)
         text = self.llm_client.generate(
             system=CYCLE_REPORT_SYSTEM,
             prompt=cycle_report_prompt(
-                patient_id=patient_id,
+                patient_id=patient_alias,
                 cycle=cycle,
                 hypotheses=hypotheses,
                 results=results,
-                kb_context=kb_context,
-                cross_report_links=cross_report_links,
-                research_context=research_context,
-                cycle_research_review=cycle_research_review,
+                kb_context=_redact_identifier(kb_context, patient_id, patient_alias),
+                cross_report_links=_redact_identifier(cross_report_links, patient_id, patient_alias),
+                research_context=_redact_identifier(research_context, patient_id, patient_alias),
+                cycle_research_review=_redact_identifier(
+                    cycle_research_review, patient_id, patient_alias
+                ),
             ),
         )
+        text = text.replace(patient_id, patient_alias)
         report = (
             f"# Cycle {cycle:02d} Probe Report\n\n"
             + _results_markdown(results)
@@ -81,6 +91,7 @@ class ReportWriter:
         path = reports_dir / f"{cycle:02d}_cycle_report.md"
         path.write_text(report, encoding="utf-8")
         insights = _insights_from_results(cycle, results)
+        insights.extend(_insights_from_task_cycle(cycle, cycle_research_review.get("task_cycle", {})))
         return path, _summary_from_text(report), insights
 
     def write_final_report(
@@ -93,16 +104,18 @@ class ReportWriter:
         research_context: dict[str, Any],
         reports_dir: Path,
     ) -> tuple[Path, str]:
+        patient_alias = stable_subject_alias(patient_id)
         text = self.llm_client.generate(
             system=FINAL_REPORT_SYSTEM,
             prompt=final_report_prompt(
-                patient_id=patient_id,
-                manifest=manifest,
-                kb_context=kb_context,
-                cross_report_links=cross_report_links,
-                research_context=research_context,
+                patient_id=patient_alias,
+                manifest=_redact_identifier(manifest, patient_id, patient_alias),
+                kb_context=_redact_identifier(kb_context, patient_id, patient_alias),
+                cross_report_links=_redact_identifier(cross_report_links, patient_id, patient_alias),
+                research_context=_redact_identifier(research_context, patient_id, patient_alias),
             ),
         )
+        text = text.replace(patient_id, patient_alias)
         report = (
             "# Final Cross-Cycle Synthesis\n\n"
             + text.strip()
@@ -120,6 +133,18 @@ def _results_markdown(results: list[TestResult]) -> str:
     for result in results:
         lines.append(f"- `{result.hypothesis_id}` `{result.method}` `{result.status}`: {result.summary}")
     return "\n".join(lines)
+
+
+def _redact_identifier(value: Any, identifier: str, alias: str) -> Any:
+    if isinstance(value, dict):
+        return {key: _redact_identifier(item, identifier, alias) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact_identifier(item, identifier, alias) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_identifier(item, identifier, alias) for item in value)
+    if isinstance(value, str):
+        return value.replace(identifier, alias)
+    return value
 
 
 def _baseline_research_markdown(
@@ -198,6 +223,27 @@ def _cycle_research_markdown(
         artifact_lines = _task_artifacts_markdown(task_cycle, reports_dir)
         if artifact_lines:
             lines.extend(["", "### Task-Cycle Artifacts", *artifact_lines])
+        hapf_task = next(
+            (task for task in task_cycle.get("tasks", []) if task.get("type") == "personalized_forecasting"),
+            None,
+        )
+        if hapf_task:
+            evidence = hapf_task.get("evidence", {})
+            lines.extend(["", "### HAPF Personalized Forecasting"])
+            lines.append(f"- Status: `{hapf_task.get('status')}`. {hapf_task.get('summary')}")
+            if hapf_task.get("status") == "completed":
+                lines.append(
+                    "- Forecast RMSE by horizon: "
+                    f"population={evidence.get('population_rmse', [])}; "
+                    f"personalized={evidence.get('personalized_rmse', [])}; "
+                    f"deployed={evidence.get('deployed_rmse', [])}."
+                )
+                lines.append(
+                    f"- Personalization gate: `{evidence.get('gate_status')}`; "
+                    f"deployed model=`{evidence.get('deployed_model')}`; "
+                    f"relative calibration improvement={_fmt(evidence.get('relative_improvement'))}; "
+                    f"cache reused={evidence.get('cache_reused')}."
+                )
     lines.extend(["", _figure_markdown(research_context, reports_dir), "", _references_markdown(research_context)])
     return "\n".join(lines)
 
@@ -211,6 +257,13 @@ def _final_research_markdown(
     lines.append(f"- Cycles requested: {manifest.get('cycles_requested')}; cycle reports produced: {len(manifest.get('cycle_reports', []))}.")
     gated = [item for item in manifest.get("cycle_reports", []) if item.get("gate_decision")]
     lines.append(f"- Evidence-gated task chains recorded: {len(gated)}.")
+    hapf_cycles = [
+        item.get("hapf", {})
+        for item in manifest.get("cycle_reports", [])
+        if item.get("hapf", {}).get("status") == "completed"
+    ]
+    accepted = sum(1 for item in hapf_cycles if item.get("evidence", {}).get("gate_accepted"))
+    lines.append(f"- HAPF completed cycles: {len(hapf_cycles)}; personalization gates accepted: {accepted}.")
     lines.append("- Claim boundary: all findings are exploratory N-of-1 evidence unless externally replicated.")
     lines.append("- Citation boundary: final text should cite only the manifest below until external discovery verifies new sources.")
     lines.extend(["", _figure_markdown(research_context, reports_dir), "", _references_markdown(research_context)])
@@ -306,3 +359,26 @@ def _insights_from_results(cycle: int, results: list[TestResult]) -> list[Insigh
                 )
             )
     return insights
+
+
+def _insights_from_task_cycle(cycle: int, task_cycle: dict[str, Any]) -> list[Insight]:
+    task = next(
+        (item for item in task_cycle.get("tasks", []) if item.get("type") == "personalized_forecasting"),
+        None,
+    )
+    if not task or task.get("status") != "completed":
+        return []
+    evidence = task.get("evidence", {})
+    return [
+        Insight(
+            cycle=cycle,
+            kind="personalized_forecasting",
+            text=str(task.get("summary", "HAPF personalized forecasting completed.")),
+            evidence=[
+                f"gate_status={evidence.get('gate_status')}",
+                f"deployed_model={evidence.get('deployed_model')}",
+                f"relative_improvement={evidence.get('relative_improvement')}",
+            ],
+            confidence="medium" if evidence.get("gate_accepted") else "low",
+        )
+    ]

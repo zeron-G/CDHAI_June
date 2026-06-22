@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ci-smoke-run
-          path: runs/ci-smoke/
+          path: runs/patient_*/
           if-no-files-found: error
 
   package:

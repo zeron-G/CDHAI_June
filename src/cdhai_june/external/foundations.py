@@ -96,5 +96,15 @@ def foundational_dependency_statuses(config: ExternalConfig) -> dict[str, dict[s
             present=resolve_project_path(config.academic_research_skills_path).exists(),
             install_hint="git submodule update --init --recursive external/academic-research-skills",
         ),
+        "cdhai_hapf": _package_status(
+            name="cdhai_hapf",
+            role=(
+                "Hierarchical patient-adaptive forecasting, calibration, and personalization-gate evidence."
+            ),
+            url=config.hapf_url,
+            path=config.hapf_path,
+            module_name="hapf",
+            install_hint="python -m pip install -e external/cdhai-hapf",
+        ),
     }
     return {name: status.to_json() for name, status in statuses.items()}

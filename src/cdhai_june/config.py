@@ -73,6 +73,18 @@ class TaskCycleConfig:
 
 
 @dataclass(slots=True)
+class HAPFConfig:
+    enabled: bool = True
+    require_for_gate: bool = False
+    cohort_data_path: str = ""
+    model_config_path: str = "external/cdhai-hapf/configs/sample_cgm.yaml"
+    heldout_subject: str = ""
+    device: str = ""
+    reuse_across_cycles: bool = True
+    allow_auto_holdout: bool = False
+
+
+@dataclass(slots=True)
 class AnalysisConfig:
     max_narrative_cycles: int = 5
     output_dir: Path = Path("runs")
@@ -82,6 +94,7 @@ class AnalysisConfig:
     cgm: CGMThresholds = field(default_factory=CGMThresholds)
     hypothesis: HypothesisConfig = field(default_factory=HypothesisConfig)
     task_cycle: TaskCycleConfig = field(default_factory=TaskCycleConfig)
+    hapf: HAPFConfig = field(default_factory=HAPFConfig)
 
 
 @dataclass(slots=True)
@@ -106,6 +119,8 @@ class ExternalConfig:
     codex_oauth_url: str = "https://github.com/zeron-G/codex_oauth.git"
     academic_research_skills_path: Path = Path("external/academic-research-skills")
     academic_research_skills_url: str = "https://github.com/Imbad0202/academic-research-skills.git"
+    hapf_path: Path = Path("external/cdhai-hapf")
+    hapf_url: str = "https://github.com/zeron-G/CDHAI-HAPF.git"
 
 
 @dataclass(slots=True)
@@ -141,6 +156,7 @@ def _build_analysis_config(raw: dict[str, Any]) -> AnalysisConfig:
     cgm_raw = raw.get("cgm", {}) or {}
     hyp_raw = raw.get("hypothesis", {}) or {}
     task_raw = raw.get("task_cycle", {}) or {}
+    hapf_raw = raw.get("hapf", {}) or {}
     return AnalysisConfig(
         max_narrative_cycles=_as_int(raw.get("max_narrative_cycles"), 5),
         output_dir=Path(str(raw.get("output_dir", "runs"))),
@@ -165,6 +181,18 @@ def _build_analysis_config(raw: dict[str, Any]) -> AnalysisConfig:
             require_neural_network=_as_bool(task_raw.get("require_neural_network", True)),
             neural_network_epochs=_as_int(task_raw.get("neural_network_epochs"), 250),
             neural_network_hidden_units=_as_int(task_raw.get("neural_network_hidden_units"), 4),
+        ),
+        hapf=HAPFConfig(
+            enabled=_as_bool(hapf_raw.get("enabled", True)),
+            require_for_gate=_as_bool(hapf_raw.get("require_for_gate", False)),
+            cohort_data_path=str(hapf_raw.get("cohort_data_path", "")).strip(),
+            model_config_path=str(
+                hapf_raw.get("model_config_path", "external/cdhai-hapf/configs/sample_cgm.yaml")
+            ).strip(),
+            heldout_subject=str(hapf_raw.get("heldout_subject", "")).strip(),
+            device=str(hapf_raw.get("device", "")).strip(),
+            reuse_across_cycles=_as_bool(hapf_raw.get("reuse_across_cycles", True)),
+            allow_auto_holdout=_as_bool(hapf_raw.get("allow_auto_holdout", False)),
         ),
     )
 
@@ -198,6 +226,8 @@ def _build_external_config(raw: dict[str, Any]) -> ExternalConfig:
         academic_research_skills_url=str(
             raw.get("academic_research_skills_url", "https://github.com/Imbad0202/academic-research-skills.git")
         ),
+        hapf_path=Path(str(raw.get("hapf_path", "external/cdhai-hapf"))),
+        hapf_url=str(raw.get("hapf_url", "https://github.com/zeron-G/CDHAI-HAPF.git")),
     )
 
 

@@ -14,6 +14,13 @@ artifacts, gates the evidence, and only then asks the LLM to produce insight
 text. The default loop runs 5 cycles and can be changed with `--cycles` or
 `analysis.max_narrative_cycles` in `configs/default.yaml`.
 
+Every enabled cycle also schedules the external
+[CDHAI-HAPF](https://github.com/zeron-G/CDHAI-HAPF) personalized-forecasting
+task. HAPF trains the population model, adapts a compact patient state,
+calibrates uncertainty, and chooses personalization or population fallback.
+CDHAI_June owns readiness checks, task orchestration, evidence persistence,
+cross-cycle caching, and reporting around that model result.
+
 This repository is a scaffold and research workbench. It is not a clinical
 decision system, diagnostic device, or patient-facing application.
 
@@ -28,6 +35,9 @@ Implemented:
 - A bounded task-cycle loop with literature mapping, feature engineering,
   statistical packaging, neural-network baseline artifacts, visualization,
   sensitivity analysis, evidence-gap analysis, and gate decisions.
+- Per-cycle HAPF population-to-patient adaptation with cohort/target contract
+  checks, subject-safe result summaries, calibration gating, RMSE visualization,
+  and cache reuse across cycles.
 - Persistent per-patient knowledge base files under `runs/`.
 - Server metadata audits for SQL-like services, SQLite assets, and WellDoc-SPACE
   manifests.
@@ -70,7 +80,7 @@ flowchart LR
   D --> E["Narrative cycle"]
   E --> F["Hypotheses"]
   F --> G["Task-cycle exploration"]
-  G --> H["Statistics, ML, visualization"]
+  G --> H["Statistics, ML, HAPF personalization, visualization"]
   H --> I["Evidence gate"]
   I --> J["Insight report"]
   J --> B
@@ -102,6 +112,7 @@ CDHAI_June/
     sample_patient.csv
   external/
     academic-research-skills/
+    cdhai-hapf/
     codex-oauth/
     haipipe-toolkit/
     tools/
@@ -144,6 +155,7 @@ Important modules:
 | `external/database.py` | Emits database/tunnel runtime hints without storing credentials. |
 | `external/foundations.py` | Checks status of foundational submodules. |
 | `external/haipipe_toolkit.py` | Resolves the local haipipe/WellDoc dependency status. |
+| `external/hapf.py` | Validates the HAPF cohort contract, resolves a held-out subject, invokes the external model lazily, caches training, redacts identifiers, and emits per-cycle evidence/figures. |
 
 ## Foundational Dependencies
 
@@ -155,6 +167,7 @@ external/haipipe-toolkit           -> https://github.com/JHU-CDHAI/WellDoc-SPACE
 external/tools                     -> https://github.com/jluo41/Tools.git
 external/codex-oauth               -> https://github.com/zeron-G/codex_oauth.git
 external/academic-research-skills  -> https://github.com/Imbad0202/academic-research-skills.git
+external/cdhai-hapf                -> https://github.com/zeron-G/CDHAI-HAPF.git
 ```
 
 Roles:
@@ -169,6 +182,10 @@ Roles:
 - `academic-research-skills`: research-method substrate. CDHAI_June adapts its
   literature matrix, preregistration, IMRAD, statistical reporting, review, and
   integrity-gate patterns into per-cycle patient-data reports.
+- `cdhai-hapf`: hierarchical patient-adaptive forecasting model. It owns the
+  neural architecture, population training, patient adaptation, conformal
+  calibration, and personalization gate; CDHAI_June consumes its structured
+  output through `external/hapf.py`.
 
 `JHU-CDHAI/WellDoc-SPACE` is private, so recursive clone and editable install
 require access to that organization repository.
@@ -272,6 +289,9 @@ analysis/
   reference_manifest.json
   figure_index.json
   research_integrity_checklist.json
+  hapf_cache/<experiment_fingerprint>/
+    results.json
+    report.md
 cycles/cycle_XX/
   hypotheses.json
   test_results.json
@@ -287,6 +307,10 @@ cycles/cycle_XX/
       results/
       images/
       notebooks/
+    task_005_personalized_forecasting/
+      results/hapf_readiness.json
+      results/hapf_cycle_interpretation.json
+      images/hapf_rmse_by_horizon.png
   research_cycle_review.json
 reports/
   baseline_report.md
@@ -304,8 +328,10 @@ Each cycle is structured as a mini research loop:
 5. Deterministic statistical test with sample size, p-value when available,
    and effect size.
 6. ML triangulation baseline or a recorded reason that ML is not applicable.
-7. Visualization artifacts.
-8. Evidence-gate decision: supported, not significant, evidence gap, or ready
+7. HAPF population/personalized/deployed forecasts, calibration gate, or a
+   structured readiness gap when no cohort/runtime is available.
+8. Visualization artifacts.
+9. Evidence-gate decision: supported, not significant, evidence gap, or ready
    for insight.
 
 Single-patient findings are always exploratory. The system reports evidence
@@ -339,10 +365,58 @@ Method references that shape the roadmap:
 | Neural forecasting baseline | Oreshkin et al. 2019/2020. [N-BEATS: Neural basis expansion analysis for interpretable time series forecasting](https://arxiv.org/abs/1905.10437). | Future univariate glucose forecasting baseline. |
 | Patch-based time-series transformer | Nie et al. 2022/2023. [A Time Series is Worth 64 Words: Long-term Forecasting with Transformers](https://arxiv.org/abs/2211.14730). | Future PatchTST-style representation learning and long-history forecasting. |
 | Linear forecasting sanity check | Zeng et al. 2023. [Are Transformers Effective for Time Series Forecasting?](https://ojs.aaai.org/index.php/AAAI/article/view/26317). | Keeps simple linear baselines in the evaluation plan before heavier neural models. |
+| Personalized glucose forecasting | Yang et al. 2023. [Personalized Blood Glucose Prediction for Type 1 Diabetes Using Evidential Deep Learning and Meta-Learning](https://pubmed.ncbi.nlm.nih.gov/35776825/). DOI: `10.1109/TBME.2022.3187703`. | Fast adaptation and uncertainty-aware patient-specific forecasting comparator. |
+| Multitask personalization | Daniels et al. 2022. [A Multitask Learning Approach to Personalized Blood Glucose Prediction](https://pubmed.ncbi.nlm.nih.gov/34314367/). DOI: `10.1109/JBHI.2021.3100558`. | Partial pooling across patients with limited subject-specific data. |
+| Low-rank adaptation | Hu et al. 2022. [LoRA: Low-Rank Adaptation of Large Language Models](https://openreview.net/forum?id=nZeVKeeFYf9). | Parameter-efficient adaptation precedent; HAPF re-evaluates the mechanism for physiological time series. |
 
 These references are not used to make clinical recommendations. They anchor
 metric definitions, reporting conventions, uncertainty language, and future
 model-comparison plans.
+
+## HAPF Cycle Integration
+
+HAPF expects a cohort Parquet with exactly the core alignment fields it needs:
+
+| Column | Meaning |
+| --- | --- |
+| `subject_key` | Stable pseudonymous subject key used for subject-safe splits. |
+| `DT_s` | Glucose observation timestamp. |
+| `BGValue` | Glucose value in mg/dL. |
+
+The A-User-Store composite output `record_CGM5Min.parquet` satisfies this
+contract. The current patient is selected by explicit
+`CDHAI_HAPF_HELDOUT_SUBJECT` or by matching `PatientDataset.patient_id` to
+`subject_key`. Automatic selection is disabled by default, preventing an
+unintended patient from becoming the reported holdout.
+
+```yaml
+analysis:
+  hapf:
+    enabled: true
+    require_for_gate: false
+    cohort_data_path: ${CDHAI_HAPF_CGM_PATH:}
+    model_config_path: ${CDHAI_HAPF_CONFIG_PATH:external/cdhai-hapf/configs/sample_cgm.yaml}
+    heldout_subject: ${CDHAI_HAPF_HELDOUT_SUBJECT:}
+    device: ${CDHAI_HAPF_DEVICE:}
+    reuse_across_cycles: true
+    allow_auto_holdout: false
+```
+
+`require_for_gate: false` preserves ordinary single-file analysis: if the
+cohort, target, PyTorch runtime, or model config is absent, every cycle records
+a `skipped` HAPF readiness artifact and continues. Set it to `true` for a study
+where completed personalization evidence is mandatory before insight. Training
+is cached by cohort metadata, target digest, model config, repository revision,
+and source URL; later cycles reuse the result while writing a fresh cycle-level
+interpretation linked to that cycle's hypotheses.
+
+Install the optional model runtime with:
+
+```bash
+python -m pip install -e "external/cdhai-hapf"
+# or
+python -m pip install -e ".[hapf]"
+```
 
 ## Local Setup
 
@@ -490,10 +564,11 @@ reports/
   a_user_store_composite/
 ```
 
-`patient_id` remains in the manifest and reports. `patient_path_segment` is a
-sanitized filesystem-safe slug used for local output paths. Each cycle stores
-its hypotheses, statistical test results, task-chain artifacts, and report. The
-final report links evidence across earlier reports.
+`patient_id` remains only in the local manifest and deterministic analysis
+artifacts needed for governed traceability. Reports, task configs, knowledge
+base text, and `patient_path_segment` use a stable SHA-256-derived patient
+alias. Each cycle stores its hypotheses, statistical test results, task-chain
+artifacts, and report. The final report links evidence across earlier reports.
 
 ## Safety, Privacy, and Governance
 

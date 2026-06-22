@@ -30,6 +30,9 @@ haipipe-toolkit = [
 codex-oauth = [
   "codex-oauth @ git+https://github.com/zeron-G/codex_oauth.git",
 ]
+hapf = [
+  "cdhai-hapf @ git+https://github.com/zeron-G/CDHAI-HAPF.git",
+]
 foundations = [
   "haipipe @ git+https://github.com/JHU-CDHAI/WellDoc-SPACE.git",
   "codex-oauth @ git+https://github.com/zeron-G/codex_oauth.git",

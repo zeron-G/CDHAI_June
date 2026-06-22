@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -12,14 +12,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from cdhai_june.config import AnalysisConfig
+from cdhai_june.config import AnalysisConfig, ExternalConfig
+from cdhai_june.external.hapf import run_hapf_cycle
 from cdhai_june.models import Hypothesis, PatientDataset, TestResult
-from cdhai_june.utils import write_json
+from cdhai_june.utils import stable_subject_alias, write_json
 
 
 @dataclass(slots=True)
 class TaskCycleRunner:
     config: AnalysisConfig
+    external_config: ExternalConfig = field(default_factory=ExternalConfig)
 
     def run(
         self,
@@ -52,6 +54,7 @@ class TaskCycleRunner:
                 break
             for planned in planned_tasks:
                 record = self._execute_task(
+                    cycle=cycle,
                     task_root=task_root,
                     task_index=len(completed) + 1,
                     round_index=round_index,
@@ -61,6 +64,7 @@ class TaskCycleRunner:
                     statistical_results=statistical_results,
                     basic_profile=basic_profile,
                     research_context=research_context,
+                    cache_dir=cycle_dir.parent.parent / "analysis" / "hapf_cache",
                 )
                 completed.append(record)
                 evidence_ledger.append(_evidence_from_task(record))
@@ -97,7 +101,7 @@ class TaskCycleRunner:
         gate_decision: dict[str, Any],
     ) -> list[dict[str, Any]]:
         if round_index == 1:
-            return [
+            tasks = [
                 _task_plan("literature_search", "Map hypotheses to the verified reference manifest.", []),
                 _task_plan("feature_engineering", "Build analysis-ready feature matrix and feature summary.", ["literature_search"]),
                 _task_plan("statistical_analysis", "Package statistical tests, effect sizes, and p-values.", ["feature_engineering"]),
@@ -106,9 +110,31 @@ class TaskCycleRunner:
                     "Develop, train, predict, and evaluate a small neural network baseline.",
                     ["feature_engineering"],
                 ),
-                _task_plan("visualization", "Create task-level figures for statistical and ML evidence.", ["statistical_analysis"]),
-                _task_plan("result_analysis", "Synthesize task evidence into support/not-significant/gap decisions.", ["visualization"]),
             ]
+            if self.config.hapf.enabled:
+                tasks.append(
+                    _task_plan(
+                        "personalized_forecasting",
+                        "Run HAPF population-to-patient adaptation, calibration, prediction, and deployment gating.",
+                        ["feature_engineering", "neural_network_train_predict"],
+                    )
+                )
+            tasks.extend(
+                [
+                    _task_plan(
+                        "visualization",
+                        "Create task-level figures for statistical, ML, and personalization evidence.",
+                        ["statistical_analysis"]
+                        + (["personalized_forecasting"] if self.config.hapf.enabled else []),
+                    ),
+                    _task_plan(
+                        "result_analysis",
+                        "Synthesize task evidence into support/not-significant/gap decisions.",
+                        ["visualization"],
+                    ),
+                ]
+            )
+            return tasks
 
         if gate_decision.get("status") == "ready_for_insight":
             return []
@@ -135,6 +161,7 @@ class TaskCycleRunner:
     def _execute_task(
         self,
         *,
+        cycle: int,
         task_root: Path,
         task_index: int,
         round_index: int,
@@ -144,6 +171,7 @@ class TaskCycleRunner:
         statistical_results: list[TestResult],
         basic_profile: dict[str, Any],
         research_context: dict[str, Any],
+        cache_dir: Path,
     ) -> dict[str, Any]:
         task_id = f"task_{task_index:03d}_{planned['type']}"
         task_dir = task_root / task_id
@@ -154,7 +182,7 @@ class TaskCycleRunner:
             "round": round_index,
             "objective": planned["objective"],
             "dependencies": planned["dependencies"],
-            "patient_id": dataset.patient_id,
+            "patient_alias": stable_subject_alias(dataset.patient_id),
             "hypotheses": [hypothesis.to_json() for hypothesis in hypotheses],
         }
         write_json(paths["config"] / "task_config.json", config_payload)
@@ -166,6 +194,7 @@ class TaskCycleRunner:
             "feature_engineering": self._run_feature_engineering,
             "statistical_analysis": self._run_statistical_analysis,
             "neural_network_train_predict": self._run_neural_network,
+            "personalized_forecasting": self._run_personalized_forecasting,
             "visualization": self._run_visualization,
             "result_analysis": self._run_result_analysis,
             "sensitivity_analysis": self._run_sensitivity_analysis,
@@ -174,14 +203,17 @@ class TaskCycleRunner:
         if executor is None:
             result = {"status": "skipped", "reason": f"Unknown task type {planned['type']}."}
         else:
-            result = executor(
-                paths=paths,
-                dataset=dataset,
-                hypotheses=hypotheses,
-                statistical_results=statistical_results,
-                basic_profile=basic_profile,
-                research_context=research_context,
-            )
+            executor_kwargs = {
+                "paths": paths,
+                "dataset": dataset,
+                "hypotheses": hypotheses,
+                "statistical_results": statistical_results,
+                "basic_profile": basic_profile,
+                "research_context": research_context,
+            }
+            if planned["type"] == "personalized_forecasting":
+                executor_kwargs.update({"cycle": cycle, "cache_dir": cache_dir})
+            result = executor(**executor_kwargs)
 
         record = {
             "task_id": task_id,
@@ -334,6 +366,29 @@ class TaskCycleRunner:
             },
         }
 
+    def _run_personalized_forecasting(
+        self,
+        *,
+        paths: dict[str, Path],
+        dataset: PatientDataset,
+        hypotheses: list[Hypothesis],
+        statistical_results: list[TestResult],
+        basic_profile: dict[str, Any],
+        research_context: dict[str, Any],
+        cycle: int,
+        cache_dir: Path,
+    ) -> dict[str, Any]:
+        del statistical_results, basic_profile, research_context
+        return run_hapf_cycle(
+            dataset=dataset,
+            config=self.config.hapf,
+            external_config=self.external_config,
+            cycle=cycle,
+            output_paths=paths,
+            cache_dir=cache_dir,
+            hypotheses=hypotheses,
+        )
+
     def _run_visualization(
         self,
         *,
@@ -452,7 +507,17 @@ class TaskCycleRunner:
         }
         if self.config.task_cycle.require_neural_network:
             required.add("neural_network_train_predict")
+        if self.config.hapf.enabled and self.config.hapf.require_for_gate:
+            required.add("personalized_forecasting")
         missing_required = sorted(required - completed_types)
+        if self.config.hapf.enabled and self.config.hapf.require_for_gate:
+            hapf_completed = any(
+                task["type"] == "personalized_forecasting" and task["status"] == "completed"
+                for task in completed_tasks
+            )
+            if not hapf_completed and "personalized_forecasting" not in missing_required:
+                missing_required.append("personalized_forecasting")
+                missing_required.sort()
         result_by_id = {result.hypothesis_id: result for result in statistical_results}
         decisions = [_hypothesis_decision(hypothesis, result_by_id.get(hypothesis.hypothesis_id), self.config.hypothesis.alpha) for hypothesis in hypotheses]
         unresolved = [row for row in decisions if row["decision"] == "evidence_gap"]
@@ -572,6 +637,14 @@ def _reference_hooks_by_family() -> dict[str, list[str]]:
         "numeric_correlation": ["rodbard_2009_cgm_interpretation"],
         "missingness_pattern": ["danne_2017_cgm_consensus"],
         "ml_prediction": ["rodbard_2009_cgm_interpretation"],
+        "personalized_forecasting": [
+            "yang_2023_personalized_bg",
+            "daniels_2022_multitask_bg",
+            "li_2020_glunet",
+            "finn_2017_maml",
+            "hu_2022_lora",
+            "shamsian_2021_pfedhn",
+        ],
     }
 
 

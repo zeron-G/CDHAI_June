@@ -14,7 +14,8 @@ probe.
 - Keep LLM-generated work behind typed schemas and allowlisted statistical
   tools. Do not execute arbitrary model-written code by default.
 - Treat `external/haipipe-toolkit`, `external/tools`,
-  `external/codex-oauth`, and `external/academic-research-skills` as the formal
+  `external/codex-oauth`, `external/academic-research-skills`, and
+  `external/cdhai-hapf` as the formal
   foundation layer for this project. Keep direct use behind adapter boundaries
   so the default dry-run path can still work before heavier or private
   dependencies are installed.
@@ -24,6 +25,9 @@ probe.
 - Keep per-cycle exploration inside the controlled `TaskCycleRunner`. It may
   generate scripts/config/results/images/notebook artifacts, but execution must
   stay inside allowlisted package code unless a future sandbox is added.
+- Keep HAPF model ownership in `external/cdhai-hapf`. CDHAI_June may validate
+  inputs, invoke the pinned API, cache aggregate results, and report evidence,
+  but must not duplicate HAPF architecture or expose raw subject identifiers.
 
 ## Validation
 
