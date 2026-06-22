@@ -39,6 +39,8 @@ Local verification on 2026-06-22:
 - Ruff: passed.
 - Pytest: 14 tests passed without warnings.
 - Package: source distribution and wheel built successfully.
+- Clean-runner compatibility: `pyarrow` is a core dependency because both the
+  public loader contract and HAPF cohort contract require Parquet support.
 - Real A-User-Store smoke: 2 cycles completed against the aligned CGM cohort.
 - Cycle 1 trained HAPF; cycle 2 reused the cache.
 - The selected holdout rejected personalization and used the population
