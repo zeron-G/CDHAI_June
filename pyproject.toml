@@ -13,6 +13,7 @@ dependencies = [
   "matplotlib>=3.8",
   "numpy>=1.25",
   "pandas>=2.0",
+  "pyarrow>=14.0",
   "pydantic>=2.6",
   "pyyaml>=6.0",
   "scipy>=1.11",
@@ -29,6 +30,9 @@ haipipe-toolkit = [
 ]
 codex-oauth = [
   "codex-oauth @ git+https://github.com/zeron-G/codex_oauth.git",
+]
+hapf = [
+  "cdhai-hapf @ git+https://github.com/zeron-G/CDHAI-HAPF.git",
 ]
 foundations = [
   "haipipe @ git+https://github.com/JHU-CDHAI/WellDoc-SPACE.git",

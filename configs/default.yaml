@@ -20,6 +20,15 @@ analysis:
     require_neural_network: true
     neural_network_epochs: 250
     neural_network_hidden_units: 4
+  hapf:
+    enabled: true
+    require_for_gate: false
+    cohort_data_path: ${CDHAI_HAPF_CGM_PATH:}
+    model_config_path: ${CDHAI_HAPF_CONFIG_PATH:external/cdhai-hapf/configs/sample_cgm.yaml}
+    heldout_subject: ${CDHAI_HAPF_HELDOUT_SUBJECT:}
+    device: ${CDHAI_HAPF_DEVICE:}
+    reuse_across_cycles: true
+    allow_auto_holdout: false
 
 llm:
   provider: ${CDHAI_LLM_PROVIDER:mock}
@@ -40,6 +49,8 @@ external:
   codex_oauth_url: ${CDHAI_CODEX_OAUTH_URL:https://github.com/zeron-G/codex_oauth.git}
   academic_research_skills_path: ${CDHAI_ACADEMIC_RESEARCH_SKILLS_PATH:external/academic-research-skills}
   academic_research_skills_url: ${CDHAI_ACADEMIC_RESEARCH_SKILLS_URL:https://github.com/Imbad0202/academic-research-skills.git}
+  hapf_path: ${CDHAI_HAPF_PATH:external/cdhai-hapf}
+  hapf_url: ${CDHAI_HAPF_URL:https://github.com/zeron-G/CDHAI-HAPF.git}
 
 database:
   ssh_host: ${CDHAI_DB_SSH_HOST:10.175.198.65}

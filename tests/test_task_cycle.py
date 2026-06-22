@@ -47,6 +47,7 @@ def test_task_cycle_creates_task_graph_and_gate(tmp_path: Path) -> None:
         "feature_engineering",
         "statistical_analysis",
         "neural_network_train_predict",
+        "personalized_forecasting",
         "visualization",
         "result_analysis",
     }
@@ -54,3 +55,8 @@ def test_task_cycle_creates_task_graph_and_gate(tmp_path: Path) -> None:
     assert (cycle_dir / "task_chain" / "gate_decision.json").exists()
     nn_task = next(task for task in payload["tasks"] if task["type"] == "neural_network_train_predict")
     assert Path(nn_task["artifacts"]["nn_metrics"]).exists()
+    hapf_task = next(task for task in payload["tasks"] if task["type"] == "personalized_forecasting")
+    assert hapf_task["status"] == "skipped"
+    assert Path(hapf_task["artifacts"]["hapf_readiness"]).exists()
+    hapf_config = Path(hapf_task["path"]) / "config" / "task_config.json"
+    assert dataset.patient_id not in hapf_config.read_text(encoding="utf-8")

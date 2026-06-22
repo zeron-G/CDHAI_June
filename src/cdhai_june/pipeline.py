@@ -12,13 +12,14 @@ from cdhai_june.data_loader import load_patient_dataset
 from cdhai_june.external.database import database_runtime_hint
 from cdhai_june.external.foundations import foundational_dependency_statuses
 from cdhai_june.external.haipipe_toolkit import haipipe_toolkit_status
+from cdhai_june.external.hapf import hapf_status
 from cdhai_june.knowledge_base import PersonalKnowledgeBase
 from cdhai_june.llm import build_llm_client
 from cdhai_june.models import RunPaths
 from cdhai_june.reporting import ReportWriter
 from cdhai_june.research import build_cycle_research_review, build_research_context
 from cdhai_june.task_cycle import TaskCycleRunner
-from cdhai_june.utils import safe_path_segment, write_json
+from cdhai_june.utils import stable_subject_alias, write_json
 
 
 class PatientAnalysisPipeline:
@@ -29,12 +30,12 @@ class PatientAnalysisPipeline:
         self.basic_analyzer = BasicAnalyzer(config.analysis)
         self.hypothesis_planner = HypothesisPlanner(config.analysis)
         self.hypothesis_tester = HypothesisTester(config.analysis)
-        self.task_cycle_runner = TaskCycleRunner(config.analysis)
+        self.task_cycle_runner = TaskCycleRunner(config.analysis, config.external)
 
     def run(self, input_path: str | Path, patient_id: str | None = None) -> dict[str, Any]:
         dataset = load_patient_dataset(input_path, patient_id=patient_id)
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        patient_path_segment = safe_path_segment(dataset.patient_id, fallback="patient")
+        patient_path_segment = stable_subject_alias(dataset.patient_id)
         paths = self._build_paths(patient_path_segment, run_id)
         paths.ensure()
 
@@ -64,6 +65,7 @@ class PatientAnalysisPipeline:
         manifest: dict[str, Any] = {
             "run_id": run_id,
             "patient_id": dataset.patient_id,
+            "patient_alias": patient_path_segment,
             "patient_path_segment": patient_path_segment,
             "input_path": str(dataset.source_path),
             "llm_provider": self.llm_client.provider_name,
@@ -88,6 +90,7 @@ class PatientAnalysisPipeline:
             "external": {
                 "foundational_dependencies": foundational_dependency_statuses(self.config.external),
                 "haipipe_toolkit": haipipe_toolkit_status(self.config.external).to_json(),
+                "cdhai_hapf": hapf_status(self.config.external, self.config.analysis.hapf).to_json(),
                 "welldoc_space_path": str(self.config.external.welldoc_space_path),
                 "tools_path": str(self.config.external.tools_path),
                 "codex_oauth_package_path": str(self.config.external.codex_oauth_package_path),
@@ -158,6 +161,7 @@ class PatientAnalysisPipeline:
                     "gate_decision": str(cycle_dir / "task_chain" / "gate_decision.json"),
                     "insight_stage_allowed": bool(task_chain.get("insight_stage_allowed")),
                     "insights_persisted": len(persisted_insights),
+                    "hapf": _hapf_cycle_summary(task_chain),
                     "hypotheses": [hypothesis.to_json() for hypothesis in hypotheses],
                     "results": [result.to_json() for result in results],
                 }
@@ -193,6 +197,21 @@ class PatientAnalysisPipeline:
             reports_dir=run_dir / "reports",
             kb_dir=output_root / "personal_knowledge_base" / patient_path_segment,
         )
+
+
+def _hapf_cycle_summary(task_chain: dict[str, Any]) -> dict[str, Any]:
+    task = next(
+        (item for item in task_chain.get("tasks", []) if item.get("type") == "personalized_forecasting"),
+        None,
+    )
+    if task is None:
+        return {"status": "not_scheduled"}
+    return {
+        "status": task.get("status"),
+        "summary": task.get("summary"),
+        "evidence": task.get("evidence", {}),
+        "artifacts": task.get("artifacts", {}),
+    }
 
 
 def manifest_as_text(manifest: dict[str, Any]) -> str:

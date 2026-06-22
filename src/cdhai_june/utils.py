@@ -38,6 +38,11 @@ def safe_path_segment(value: str, fallback: str = "item", max_length: int = 80) 
     return slug[:max_length].strip("-") or fallback
 
 
+def stable_subject_alias(value: str, prefix: str = "patient") -> str:
+    digest = sha256(str(value).encode("utf-8")).hexdigest()[:12]
+    return f"{prefix}_{digest}"
+
+
 def to_jsonable(value: Any) -> Any:
     if isinstance(value, Path):
         return str(value)

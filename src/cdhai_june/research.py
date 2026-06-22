@@ -6,6 +6,7 @@ from typing import Any
 
 from cdhai_june.config import AnalysisConfig, ExternalConfig
 from cdhai_june.external.haipipe_toolkit import resolve_project_path
+from cdhai_june.external.hapf import hapf_status
 from cdhai_june.models import Hypothesis, PatientDataset, TestResult
 from cdhai_june.utils import write_json
 
@@ -26,6 +27,7 @@ def build_research_context(
     figure_index = build_figure_index(analysis_dir)
     skill_sources = _academic_skill_sources(external_config)
     integrity_checklist = _integrity_checklist()
+    hapf_foundation = hapf_status(external_config, analysis_config.hapf).to_json()
     context = {
         "generated_at": generated_at,
         "academic_research_skills": skill_sources,
@@ -34,6 +36,7 @@ def build_research_context(
         "reference_manifest": reference_manifest,
         "figure_index": figure_index,
         "integrity_checklist": integrity_checklist,
+        "cdhai_hapf": hapf_foundation,
     }
     write_json(analysis_dir / "research_protocol.json", protocol)
     write_json(analysis_dir / "literature_matrix.json", literature_matrix)
@@ -77,7 +80,7 @@ def build_cycle_research_review(
         "cycle": cycle,
         "generated_at": _now(),
         "alpha": analysis_config.hypothesis.alpha,
-        "research_question_link": "RQ1/RQ2/RQ3 depending on tested variables and family.",
+        "research_question_link": "RQ1/RQ2/RQ3/RQ4 depending on tested variables and model evidence.",
         "hypothesis_chain": [
             {
                 "hypothesis_id": hypothesis.hypothesis_id,
@@ -101,6 +104,10 @@ def build_cycle_research_review(
         "ml_audit": {
             "baseline_source": "analysis/ml_prediction_metrics.json",
             "required_claim": "ML results are a triangulation baseline, not a validated clinical prediction model.",
+            "personalization_task": "task_chain/personalized_forecasting",
+            "personalization_claim": (
+                "HAPF is exploratory cohort-to-patient adaptation evidence; deployment requires its calibration gate."
+            ),
         },
         "task_cycle": task_chain or {},
         "visualization_audit": research_context.get("figure_index", {}),
@@ -115,6 +122,7 @@ def build_cycle_research_review(
                 "mathematical/statistical formulation",
                 "test result with effect size",
                 "ML triangulation if relevant",
+                "HAPF population-versus-personalized forecast evidence when configured",
                 "limitations and next falsification step",
             ],
         },
@@ -147,6 +155,8 @@ def _research_protocol(
             "cgm_available": cgm_available,
             "event_analysis_available": event_available,
             "ml_prediction_available": ml_available,
+            "hapf_enabled": analysis_config.hapf.enabled,
+            "hapf_cohort_configured": bool(analysis_config.hapf.cohort_data_path),
         },
         "research_questions": [
             {
@@ -163,6 +173,22 @@ def _research_protocol(
                 "id": "RQ3",
                 "question": "Does a transparent time-aware model predict next glucose better than persistence?",
                 "reference_ids": ["rodbard_2009_cgm_interpretation"],
+            },
+            {
+                "id": "RQ4",
+                "question": (
+                    "Does subject-specific low-rank adaptation improve calibrated multi-horizon forecasting "
+                    "over the population model without harming any configured horizon?"
+                ),
+                "reference_ids": [
+                    "yang_2023_personalized_bg",
+                    "daniels_2022_multitask_bg",
+                    "li_2020_glunet",
+                    "finn_2017_maml",
+                    "hu_2022_lora",
+                    "shamsian_2021_pfedhn",
+                    "marquand_2016_normative",
+                ],
             },
         ],
         "hypotheses": [
@@ -190,6 +216,18 @@ def _research_protocol(
                 "test_family": "ml_prediction",
                 "falsification": "Time-split MAE is not lower than persistence or the test split is too small.",
             },
+            {
+                "id": "H5",
+                "statement": (
+                    "HAPF patient adaptation reduces calibration RMSE relative to the population model "
+                    "while remaining noninferior at every forecast horizon."
+                ),
+                "test_family": "personalized_forecasting",
+                "falsification": (
+                    "The preregistered relative-improvement threshold is not met, any horizon is inferior, "
+                    "or subject-safe adaptation/calibration/test splits are insufficient."
+                ),
+            },
         ],
         "mathematical_formalization": {
             "glucose_series": "Let G_t be observed glucose in mg/dL at timestamp t.",
@@ -198,6 +236,11 @@ def _research_protocol(
             "meal_response": "Delta_meal = max(G_{t:t+180min}) - mean(G_{t-30min:t}).",
             "activity_response": "Delta_activity = mean(G_{t:t+180min}) - mean(G_{t-60min:t}).",
             "prediction_model": "G_{t+1} = beta_0 + beta_1 G_t + beta_2 sin(hour_t) + beta_3 cos(hour_t) + beta_k X_{k,t} + epsilon_t.",
+            "hapf_adaptation": (
+                "For population parameters theta and patient code z_i, use a low-rank update "
+                "Delta W_i = A diag(z_i) B; accept personalization only when calibration RMSE "
+                "improves by the configured margin and is noninferior at every horizon."
+            ),
         },
         "statistical_analysis_plan": {
             "alpha": analysis_config.hypothesis.alpha,
@@ -207,6 +250,10 @@ def _research_protocol(
                 "kruskal_wallis": "epsilon-squared when group counts allow",
                 "linear_trend": "r and R-squared",
                 "prediction": "MAE/RMSE difference versus persistence baseline",
+                "personalization": (
+                    "Subject-held-out population/personalized/deployed RMSE by horizon, calibration relative "
+                    "improvement, conformal interval coverage/width, and explicit fallback-gate decision"
+                ),
             },
             "missing_data": "Report per-column missingness and treat missing event records as possible measurement bias.",
             "assumption_checks": [
@@ -219,6 +266,7 @@ def _research_protocol(
             "CGM trace with target range shading",
             "Mean glucose by hour",
             "Next-glucose observed-versus-predicted plot",
+            "HAPF population-versus-personalized RMSE by forecast horizon",
             "Future cycle-specific event-response or residual plots",
         ],
         "reference_policy": {
@@ -302,11 +350,96 @@ def _reference_manifest(generated_at: str) -> dict[str, Any]:
             "use_for": ["future sensor accuracy analyses with paired reference values"],
             "verification_status": "web_verified_metadata",
         },
+        {
+            "id": "yang_2023_personalized_bg",
+            "authors": "Yang et al.",
+            "year": 2023,
+            "title": "Personalized Blood Glucose Prediction for Type 1 Diabetes Using Evidential Deep Learning and Meta-Learning",
+            "venue": "IEEE Transactions on Biomedical Engineering, 70(1), 193-204",
+            "doi": "10.1109/TBME.2022.3187703",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/35776825/",
+            "evidence_type": "personalized forecasting method",
+            "use_for": ["fast subject adaptation", "uncertainty-aware glucose prediction", "meta-learning comparator"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "daniels_2022_multitask_bg",
+            "authors": "Daniels et al.",
+            "year": 2022,
+            "title": "A Multitask Learning Approach to Personalized Blood Glucose Prediction",
+            "venue": "IEEE Journal of Biomedical and Health Informatics, 26(1), 436-445",
+            "doi": "10.1109/JBHI.2021.3100558",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/34314367/",
+            "evidence_type": "personalized forecasting method",
+            "use_for": ["partial pooling", "multitask personalization", "limited patient-data adaptation"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "li_2020_glunet",
+            "authors": "Li et al.",
+            "year": 2020,
+            "title": "GluNet: A Deep Learning Framework for Accurate Glucose Forecasting",
+            "venue": "IEEE Journal of Biomedical and Health Informatics, 24(2), 414-423",
+            "doi": "10.1109/JBHI.2019.2931842",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/31369390/",
+            "evidence_type": "glucose forecasting architecture",
+            "use_for": ["causal dilated convolution", "multi-horizon glucose forecasting", "backbone comparator"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "finn_2017_maml",
+            "authors": "Finn, Abbeel, and Levine",
+            "year": 2017,
+            "title": "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks",
+            "venue": "Proceedings of the 34th International Conference on Machine Learning",
+            "doi": None,
+            "url": "https://proceedings.mlr.press/v70/finn17a.html",
+            "evidence_type": "meta-learning method",
+            "use_for": ["few-shot adaptation", "support-query evaluation", "personalization comparator"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "hu_2022_lora",
+            "authors": "Hu et al.",
+            "year": 2022,
+            "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+            "venue": "International Conference on Learning Representations",
+            "doi": None,
+            "url": "https://openreview.net/forum?id=nZeVKeeFYf9",
+            "evidence_type": "parameter-efficient adaptation method",
+            "use_for": ["low-rank adaptation", "parameter-efficient patient state", "adapter design precedent"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "shamsian_2021_pfedhn",
+            "authors": "Shamsian et al.",
+            "year": 2021,
+            "title": "Personalized Federated Learning using Hypernetworks",
+            "venue": "Proceedings of the 38th International Conference on Machine Learning",
+            "doi": None,
+            "url": "https://proceedings.mlr.press/v139/shamsian21a.html",
+            "evidence_type": "personalized learning method",
+            "use_for": ["patient-conditioned parameters", "hypernetwork personalization", "cold-start comparator"],
+            "verification_status": "hapf_primary_reference",
+        },
+        {
+            "id": "marquand_2016_normative",
+            "authors": "Marquand et al.",
+            "year": 2016,
+            "title": "Understanding Heterogeneity in Clinical Cohorts Using Normative Models: Beyond Case-Control Studies",
+            "venue": "Biological Psychiatry, 80(7), 552-561",
+            "doi": "10.1016/j.biopsych.2015.12.023",
+            "url": "https://doi.org/10.1016/j.biopsych.2015.12.023",
+            "evidence_type": "normative modeling framework",
+            "use_for": ["individual deviation modeling", "cohort heterogeneity", "personalized reference distributions"],
+            "verification_status": "hapf_primary_reference",
+        },
     ]
     return {
         "generated_at": generated_at,
         "verification_note": (
-            "Metadata was seeded from web-verified bibliographic records on 2026-06-07. "
+            "CGM metadata was seeded from web-verified records on 2026-06-07; HAPF references "
+            "were imported from its primary-source literature manifest on 2026-06-21. "
             "Publication-grade manuscripts should re-run citation verification before submission."
         ),
         "references": references,
@@ -320,15 +453,23 @@ def _literature_matrix(reference_manifest: dict[str, Any]) -> dict[str, Any]:
         "Glycemic variability",
         "Clinical accuracy and measurement risk",
         "Individualized clinical context",
+        "Personalized forecasting and adaptation",
     ]
     rows = []
     theme_map = {
-        "battelino_2019_tir": ["supports", "supports", "partial", "not_addressed", "supports"],
-        "danne_2017_cgm_consensus": ["supports", "supports", "partial", "not_addressed", "supports"],
-        "ada_2026_glycemic_goals": ["supports", "partial", "partial", "not_addressed", "supports"],
-        "rodbard_2009_cgm_interpretation": ["supports", "partial", "supports", "not_addressed", "partial"],
-        "clarke_1987_error_grid": ["not_addressed", "not_addressed", "not_addressed", "supports", "partial"],
-        "parkes_2000_consensus_error_grid": ["not_addressed", "not_addressed", "not_addressed", "supports", "partial"],
+        "battelino_2019_tir": ["supports", "supports", "partial", "not_addressed", "supports", "partial"],
+        "danne_2017_cgm_consensus": ["supports", "supports", "partial", "not_addressed", "supports", "partial"],
+        "ada_2026_glycemic_goals": ["supports", "partial", "partial", "not_addressed", "supports", "partial"],
+        "rodbard_2009_cgm_interpretation": ["supports", "partial", "supports", "not_addressed", "partial", "partial"],
+        "clarke_1987_error_grid": ["not_addressed", "not_addressed", "not_addressed", "supports", "partial", "not_addressed"],
+        "parkes_2000_consensus_error_grid": ["not_addressed", "not_addressed", "not_addressed", "supports", "partial", "not_addressed"],
+        "yang_2023_personalized_bg": ["partial", "partial", "partial", "not_addressed", "supports", "supports"],
+        "daniels_2022_multitask_bg": ["partial", "partial", "partial", "not_addressed", "supports", "supports"],
+        "li_2020_glunet": ["partial", "partial", "partial", "not_addressed", "partial", "supports"],
+        "finn_2017_maml": ["not_addressed", "not_addressed", "not_addressed", "not_addressed", "partial", "supports"],
+        "hu_2022_lora": ["not_addressed", "not_addressed", "not_addressed", "not_addressed", "partial", "supports"],
+        "shamsian_2021_pfedhn": ["not_addressed", "not_addressed", "not_addressed", "not_addressed", "supports", "supports"],
+        "marquand_2016_normative": ["not_addressed", "partial", "partial", "not_addressed", "supports", "supports"],
     }
     for ref in reference_manifest.get("references", []):
         rows.append(
@@ -347,6 +488,7 @@ def _literature_matrix(reference_manifest: dict[str, Any]) -> dict[str, Any]:
             "No external cohort validation has been run in this project scaffold yet.",
             "No paired laboratory or reference-meter glucose values are available for sensor accuracy grids.",
             "Single-patient observational data cannot establish causal meal or activity effects.",
+            "HAPF remains exploratory until nested subject-level validation and comparator ablations are complete.",
         ],
     }
 
@@ -386,6 +528,7 @@ def _integrity_checklist() -> dict[str, Any]:
             "mathematical/statistical formulation",
             "deterministic test result with n, p-value where available, and effect size",
             "ML prediction baseline or reason it is not applicable",
+            "HAPF population/personalized/deployed forecast comparison or a structured readiness gap",
             "visualization references",
             "limitations, missingness, and next-step probe",
         ],
@@ -487,6 +630,15 @@ def _references_by_family(research_context: dict[str, Any]) -> dict[str, list[st
         "numeric_correlation": ["rodbard_2009_cgm_interpretation"],
         "missingness_pattern": ["danne_2017_cgm_consensus"],
         "ml_prediction": ["rodbard_2009_cgm_interpretation"],
+        "personalized_forecasting": [
+            "yang_2023_personalized_bg",
+            "daniels_2022_multitask_bg",
+            "li_2020_glunet",
+            "finn_2017_maml",
+            "hu_2022_lora",
+            "shamsian_2021_pfedhn",
+            "marquand_2016_normative",
+        ],
     }
 
 

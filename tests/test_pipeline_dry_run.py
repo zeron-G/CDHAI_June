@@ -29,6 +29,9 @@ def test_pipeline_dry_run_creates_reports(tmp_path: Path) -> None:
     assert "Task-Cycle Artifacts" in cycle_report_text
     assert "statistical_evidence_overview.png" in cycle_report_text
     assert "nn_observed_vs_predicted.png" in cycle_report_text
+    assert "HAPF Personalized Forecasting" in cycle_report_text
+    assert manifest["cycle_reports"][0]["hapf"]["status"] == "skipped"
+    assert "demo-test" not in cycle_report_text
 
 
 def test_pipeline_sanitizes_patient_id_for_output_paths(tmp_path: Path) -> None:
@@ -46,3 +49,5 @@ def test_pipeline_sanitizes_patient_id_for_output_paths(tmp_path: Path) -> None:
     assert manifest["patient_path_segment"] != manifest["patient_id"]
     assert "\\" not in manifest["patient_path_segment"]
     assert "/" not in manifest["patient_path_segment"]
+    report_text = Path(manifest["cycle_reports"][0]["report_path"]).read_text(encoding="utf-8")
+    assert manifest["patient_id"] not in report_text
